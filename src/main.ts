@@ -1,7 +1,8 @@
 import { WebGLInstance } from "./instance";
 import { TextureFilter, TextureWrap } from "./texture";
 import { Color } from "./color";
-import { VertexBufferUsage } from "./vertex-buffer";
+import { VBOUsage } from "./vertex-buffer";
+import { EBOUsage } from "./element-buffer";
 
 // Vertex shader code
 const vertexShaderCode =
@@ -49,13 +50,18 @@ const screenVertices = new Float32Array([
 	-1, -1,  0, 1,
 	 1, -1,  1, 1,
 	-1,  1,  0, 0,
-	 1, -1,  1, 1,
-	-1,  1,  0, 0,
 	 1,  1,  1, 0
 ]);
-gl.createVertexBuffer("vbo_screen", 6, [2, 2], VertexBufferUsage.Dynamic);
-gl.setVertexBufferData("vbo_screen", screenVertices, 0);
-gl.bufferVertexBufferData("vbo_screen");
+gl.createVBO("vbo_screen", 4, [2, 2], VBOUsage.Dynamic);
+gl.setVBOData("vbo_screen", screenVertices, 0);
+gl.bufferVBOData("vbo_screen");
+
+const elements = new Uint16Array([
+	0, 1, 2, 1, 2, 3
+]);
+gl.createEBO("ebo_screen", 6, EBOUsage.Dynamic);
+gl.setEBOData("ebo_screen", elements, 0);
+gl.bufferEBOData("ebo_screen");
 
 function render(time: number)
 {
@@ -63,7 +69,7 @@ function render(time: number)
 	gl.useShader("shader_main");
 	gl.setActiveTexture("texture_test", 0);
 	gl.setShaderUniform1i("shader_main", "txt", 0);
-	gl.drawVertexBuffer("vbo_screen");
+	gl.drawVBOWithEBO("vbo_screen", "ebo_screen");
 	requestAnimationFrame(render);
 }
 

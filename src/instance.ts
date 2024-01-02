@@ -2,7 +2,8 @@ import { Color } from "./color";
 import { Resource } from "./resource";
 import { Shader } from "./shader";
 import { Texture, TextureFilter, TextureWrap } from "./texture";
-import { VertexBuffer, VertexBufferUsage } from "./vertex-buffer";
+import { VertexBuffer, VBOUsage } from "./vertex-buffer";
+import { ElementBuffer, EBOUsage } from "./element-buffer";
 
 // WebGL instance
 export class WebGLInstance
@@ -321,75 +322,123 @@ export class WebGLInstance
 	/* ------------- */
 	
 	// Create vertex buffer
-	public createVertexBuffer(id: string, vertexCount: number, attribLengths: number[], usage: VertexBufferUsage)
+	public createVBO(id: string, vertexCount: number, attribLengths: number[], usage: VBOUsage)
 	{
 		let buffer = new VertexBuffer(this._gl, vertexCount, attribLengths, usage);
 		this.addToResourcePool("vbos", id, buffer);
 	}
 	
 	// Get vertex buffer vertex count
-	public getVertexBufferVertexCount(id: string): number
+	public getVBOVertexCount(id: string): number
 	{
 		return (this.getResource("vbos", id) as VertexBuffer)?.vertexCount;
 	}
 	
 	// Get vertex buffer attribute count
-	public getVertexBufferAttribCount(id: string): number
+	public getVBOAttribCount(id: string): number
 	{
 		return (this.getResource("vbos", id) as VertexBuffer)?.attribCount;
 	}
 	
 	// Get vertex buffer attribute lengths
-	public getVertexBufferAttribLengths(id: string): ReadonlyArray<number>
+	public getVBOAttribLengths(id: string): ReadonlyArray<number>
 	{
 		return (this.getResource("vbos", id) as VertexBuffer)?.attribLengths;
 	}
 	
 	// Get vertex buffer attribute offsets
-	public getVertexBufferAttribOffsets(id: string): ReadonlyArray<number>
+	public getVBOAttribOffsets(id: string): ReadonlyArray<number>
 	{
 		return (this.getResource("vbos", id) as VertexBuffer)?.attribOffsets;
 	}
 	
 	// Get vertex buffer stride
-	public getVertexBufferStride(id: string): number
+	public getVBOStride(id: string): number
 	{
 		return (this.getResource("vbos", id) as VertexBuffer)?.stride;
 	}
 	
 	// Get vertex buffer usage
-	public getVertexBufferUsage(id: string): VertexBufferUsage
+	public getVBOUsage(id: string): VBOUsage
 	{
 		return (this.getResource("vbos", id) as VertexBuffer)?.usage;
 	}
 	
 	// Get vertex buffer data
-	public getVertexBufferData(id: string): Float32Array
+	public getVBOData(id: string): Float32Array
 	{
 		return (this.getResource("vbos", id) as VertexBuffer)?.data;
 	}
 	
-	// Buffer vertex buffer data
-	public bufferVertexBufferData(id: string)
-	{
-		(this.getResource("vbos", id) as VertexBuffer)?.bufferData();
-	}
-	
 	// Set vertex buffer data
-	public setVertexBufferData(id: string, data: Float32Array, offset: number)
+	public setVBOData(id: string, data: Float32Array, offset: number)
 	{
 		(this.getResource("vbos", id) as VertexBuffer)?.setData(data, offset);
 	}
 	
-	// Draw vertex buffer
-	public drawVertexBuffer(id: string)
+	// Buffer vertex buffer data
+	public bufferVBOData(id: string)
+	{
+		(this.getResource("vbos", id) as VertexBuffer)?.bufferData();
+	}
+	
+	// Draw with vertex buffer
+	public drawVBO(id: string)
 	{
 		(this.getResource("vbos", id) as VertexBuffer)?.draw();
 	}
 	
+	// Delete vertex buffer
+	public deleteVBO(id: string)
+	{
+		this.deleteResource("vbos", id);
+	}
+	
 	// Delete all vertex buffers
-	public deleteAllVertexBuffers()
+	public deleteAllVBOs()
 	{
 		this.deleteResourcePool("vbos");
+	}
+	
+	/* -------------- */
+	/* ELEMENT BUFFER */
+	/* -------------- */
+	
+	// Create element buffer
+	public createEBO(id: string, count: number, usage: EBOUsage)
+	{
+		let buffer = new ElementBuffer(this._gl, count, usage);
+		this.addToResourcePool("ebos", id, buffer);
+	}
+	
+	// Set element buffer data
+	public setEBOData(id: string, data: Uint16Array, offset: number)
+	{
+		(this.getResource("ebos", id) as ElementBuffer)?.setData(data, offset);
+	}
+	
+	// Buffer element buffer data
+	public bufferEBOData(id: string)
+	{
+		(this.getResource("ebos", id) as ElementBuffer)?.bufferData();
+	}
+	
+	// Draw with vertex buffer and element buffer
+	public drawVBOWithEBO(vboID: string, eboID: string)
+	{
+		let vbo = this.getResource("vbos", vboID) as VertexBuffer;
+		(this.getResource("ebos", eboID) as ElementBuffer)?.draw(vbo);
+	}
+	
+	// Delete element buffer
+	public deleteEBO(id: string)
+	{
+		this.deleteResource("ebos", id);
+	}
+	
+	// Delete all element buffers
+	public deleteAllEBOs()
+	{
+		this.deleteResourcePool("ebos");
 	}
 }

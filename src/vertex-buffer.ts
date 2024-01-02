@@ -1,8 +1,7 @@
 import { Resource } from "./resource";
-import { Shader } from "./shader";
 
 // Vertex buffer usage
-export enum VertexBufferUsage
+export enum VBOUsage
 {
 	Static,
 	Dynamic,
@@ -26,11 +25,11 @@ export class VertexBuffer extends Resource
 	get attribLengths(): ReadonlyArray<number> { return this._attribLengths; }
 	get attribOffsets(): ReadonlyArray<number> { return this._attribOffsets; }
 	get stride(): number { return this._stride; }
-	get usage(): VertexBufferUsage { return this._usage; }
+	get usage(): VBOUsage { return this._usage; }
 	
 	// Constructor
 	constructor(gl: WebGL2RenderingContext, private _vertexCount: number,
-		private _attribLengths: number[], private _usage: VertexBufferUsage)
+		private _attribLengths: number[], private _usage: VBOUsage)
 	{
 		super(gl);
 		this._buffer = this._gl.createBuffer();
