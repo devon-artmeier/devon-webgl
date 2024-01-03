@@ -4,6 +4,8 @@ import { Shader } from "./shader";
 import { Texture, TextureFilter, TextureWrap } from "./texture";
 import { VertexBuffer, VBOUsage } from "./vertex-buffer";
 import { ElementBuffer, EBOUsage } from "./element-buffer";
+import { Matrix } from "./matrix";
+import { Vector3 } from "./vector";
 
 // WebGL instance
 export class WebGLInstance
@@ -16,7 +18,13 @@ export class WebGLInstance
 		this._gl = this._canvas.getContext("webgl2");
 		this._gl.enable(this._gl.BLEND);
 		this._gl.blendFunc(this._gl.SRC_ALPHA, this._gl.ONE_MINUS_SRC_ALPHA);
+		this._gl.depthFunc(this._gl.LESS);
+		this._gl.depthMask(true); 
 	}
+	
+	/* ------ */
+	/* SCREEN */
+	/* ------ */
 	
 	// Set viewport
 	public setViewport(x: number, y: number, width: number, height: number)
@@ -24,11 +32,187 @@ export class WebGLInstance
 		this._gl.viewport(x, y, width, height);
 	}
 	
-	// Clear with color
-	public clearColor(color: Color)
+	// Get viewport
+	public getViewport(): number[]
+	{
+		return this._gl.getParameter(this._gl.VIEWPORT);
+	}
+	
+	// Clear screen
+	public clearScreen(color: Color)
 	{
 		this._gl.clearColor(color.r, color.g, color.b, color.a);
-		this._gl.clear(this._gl.COLOR_BUFFER_BIT);
+		this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
+	}
+	
+	// Enable depth testing
+	public enableDepthTest()
+	{
+		this._gl.enable(this._gl.DEPTH_TEST); 
+	}
+	
+	// Disable depth testing
+	public disableDepthTest()
+	{
+		this._gl.disable(this._gl.DEPTH_TEST); 
+	}
+	
+	/* ---- */
+	/* MATH */
+	/* ---- */
+	
+	// Convert degrees to radians
+	public degToRad(angle: number): number
+	{
+		return angle * (Math.PI / 180);
+	}
+	
+	// Convert radians to degrees
+	public radToDeg(angle: number): number
+	{
+		return angle * (180 / Math.PI);
+	}
+	
+	// Generate orthographic projection matrix 
+	public orthoMatrix(l: number, r: number, t: number, b: number, n: number, f: number): Matrix
+	{
+		return new Matrix([
+			[2/(r-l), 0, 0, 0],
+			[0, 2/(t-b), 0, 0],
+			[0, 0, -2/(f-n), 0],
+			[-(r+l)/(r-l), -(t+b)/(t-b), 0, 1]]);
+	}
+	
+	// Generate perspective projection matrix
+	public perspectiveMatrix(fov: number, w: number, h: number, n: number, f: number): Matrix
+	{
+		let ft = Math.tan(this.degToRad(fov)/2);
+		return new Matrix([
+			[1/((w/h)*ft), 0, 0, 0],
+			[0, 1/ft, 0, 0],
+			[0, 0, -(f+n)/(f-n), -1],
+			[0, 0, -(2*f*n)/(f-n), 0]]);
+	}
+	
+	// Generate "look at" view matrix
+	public lookAtMatrix(eye: Vector3, at: Vector3, up: Vector3)
+	{
+		let z = eye.subtractVector(at).normalize();
+		let x = up.cross(z).normalize();
+		let	y = z.cross(x);
+		
+		return new Matrix([
+			[x.v[0], x.v[1], x.v[2], 0],
+			[y.v[0], y.v[1], y.v[2], 0],
+			[z.v[0], z.v[1], z.v[2], 0],
+			[-x.dot(eye), -y.dot(eye), -z.dot(eye), 1]
+		]);
+	}
+	
+	// Generate translation matrix
+	public translateMatrix(x: number, y: number, z: number): Matrix
+	{
+		return new Matrix([
+			[1, 0, 0, 0],
+			[0, 1, 0, 0],
+			[0, 0, 1, 0],
+			[x, y, z, 1],
+		]);
+	}
+	
+	// Generate 2D translation matrix
+	public translate2DMatrix(x: number, y: number)
+	{
+		return this.translateMatrix(x, y, 0);	
+	}
+	
+	// Generate X rotation matrix
+	public rotateXMatrix(angle: number): Matrix
+	{
+		let s = Math.sin(angle);
+		let c = Math.cos(angle);
+		
+		return new Matrix([
+			[1,  0,  0,  0],
+			[0,  c,  s,  0],
+			[0, -s,  c,  0],
+			[0,  0,  0,  1],
+		]);
+	}
+	
+	// Generate Y rotation matrix
+	public rotateYMatrix(angle: number): Matrix
+	{
+		let s = Math.sin(angle);
+		let c = Math.cos(angle);
+		
+		return new Matrix([
+			[c,  0, -s,  0],
+			[0,  1,  0,  0],
+			[s,  0,  c,  0],
+			[0,  0,  0,  1],
+		]);
+	}
+	
+	// Generate Z rotation matrix
+	public rotateZMatrix(angle: number): Matrix
+	{
+		let s = Math.sin(angle);
+		let c = Math.cos(angle);
+		
+		return new Matrix([
+			[ c,  s,  0,  0],
+			[-s,  c,  0,  0],
+			[ 0,  0,  1,  0],
+			[ 0,  0,  0,  1],
+		]);
+	}
+	
+	// Generate rotation matrix
+	public rotateMatrix(x: number, y: number, z: number): Matrix
+	{
+		return this.rotateZMatrix(z).multiply(this.rotateYMatrix(y).multiply(this.rotateXMatrix(x)));
+	}
+	
+	// Generate 2D rotation matrix
+	public rotate2DMatrix(angle: number)
+	{
+		return this.rotateZMatrix(angle);	
+	}
+	
+	// Generate scale matrix
+	public scaleMatrix(x: number, y: number, z: number)
+	{
+		return new Matrix([
+			[x, 0, 0, 0],
+			[0, y, 0, 0],
+			[0, 0, z, 0],
+			[0, 0, 0, 1],
+		]);
+	}
+	
+	// Generate X scale matrix
+	public scaleXMatrix(x: number)
+	{
+		return this.scaleMatrix(x, 1, 1);
+	}
+	
+	// Generate Y scale matrix
+	public scaleYMatrix(y: number)
+	{
+		return this.scaleMatrix(1, y, 1);
+	}
+	
+	// Generate Z scale matrix
+	public scaleZMatrix(z: number)
+	{
+		return this.scaleMatrix(1, 1, z);
+	}
+	
+	// Generate 2D scale matrix
+	public scale2DMatrix(x: number, y: number)
+	{
+		return this.scaleMatrix(x, y, 1);	
 	}
 	
 	/* -------- */
@@ -217,13 +401,13 @@ export class WebGLInstance
 	}
 		
 	// Set 3-component matrix uniform shader attribute
-	public setUniformMatrix3fv(id: string, name: string, val: Float32Array)
+	public setShaderUniformMatrix3fv(id: string, name: string, val: Float32Array)
 	{
 		(this.getResource("shaders", id) as Shader)?.setUniformMatrix3fv(name, val);
 	}
 		
 	// Set 4-component matrix uniform shader attribute
-	public setUniformMatrix4fv(id: string, name: string, val: Float32Array)
+	public setShaderUniformMatrix4fv(id: string, name: string, val: Float32Array)
 	{
 		(this.getResource("shaders", id) as Shader)?.setUniformMatrix4fv(name, val);
 	}
