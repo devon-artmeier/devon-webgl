@@ -42,7 +42,6 @@ void main(void)
 
 const gl = new WebGLInstance(document.getElementById("test-canvas") as HTMLCanvasElement);
 
-gl.setViewport(0, 0, 320, 224);
 gl.enableDepthTest();
 
 gl.createTexture("texture_test");
@@ -122,14 +121,15 @@ gl.setVAOBuffers("vao_cube", "vbo_cube", "ebo_cube");
 gl.createVAO("vao_square");
 gl.setVAOBuffers("vao_square", "vbo_square", "ebo_square");
 
-gl.createFBO("fbo", 320, 224);
+gl.createFBO("fbo", 256, 256);
 
 let ortho = gl.orthoMatrix(-160, 160, -112, 112, 0.1, 512);
-ortho = gl.perspectiveMatrix(60, 320, 224, 0.1, 1000);
 
 function render(time: number)
 {
 	gl.bindFBO("fbo");
+	gl.setViewport(0, 0, 256, 256);
+	ortho = gl.perspectiveMatrix(60, 256, 256, 0.1, 1000);
 	
 	gl.clearScreen(Color.FromRGBA(0, 0, 1, 1));
 	gl.useShader("shader_main");
@@ -142,7 +142,7 @@ function render(time: number)
 	let x = Math.cos(gl.degToRad(time/4))*256;
 	let z = Math.sin(gl.degToRad(time/4))*256;
 	
-	let view = gl.lookAtMatrix(new Vector3([x,z,256]), new Vector3([0,0,0]), new Vector3([0,1,0]));
+	let view = gl.lookAtMatrix(new Vector3([x,z,512]), new Vector3([0,0,0]), new Vector3([0,1,0]));
 	
 	gl.setShaderUniformMatrix4fv("shader_main", "model", model.flat());
 	gl.setShaderUniformMatrix4fv("shader_main", "view", view.flat());
@@ -157,13 +157,15 @@ function render(time: number)
 	gl.drawVAO("vao_square");
 	
 	gl.unbindFBO();
+	gl.setViewport(0, 0, 640, 480);
+	ortho = gl.perspectiveMatrix(60, 640, 480, 0.1, 1000);
 	
 	gl.clearScreen(Color.FromRGBA(1, 0, 1, 1));
 	gl.useShader("shader_main");
-	gl.setActiveTextureFBO("fbo", 0);
+	gl.setActiveTexture("texture_test", 0);
 	gl.setShaderUniform1i("shader_main", "txt", 0);
 	
-	model = gl.translateMatrix(-128, 0, 0);
+	model = gl.translateMatrix(0, 0, 0);
 	model = model.multiply(gl.rotateMatrix(gl.degToRad(time/25),gl.degToRad(time/25),gl.degToRad(time/25)));
 	
 	x = Math.cos(gl.degToRad(time/4))*256;
@@ -176,12 +178,6 @@ function render(time: number)
 	gl.setShaderUniformMatrix4fv("shader_main", "projection", ortho.flat());
 	
 	gl.drawVAO("vao_cube");
-	
-	model = gl.translateMatrix(128, 0, 0);
-	model = model.multiply(gl.rotateMatrix(0,0,gl.degToRad(time/10)));
-	gl.setShaderUniformMatrix4fv("shader_main", "model", model.flat());
-	
-	gl.drawVAO("vao_square");
 	
 	requestAnimationFrame(render);
 }
