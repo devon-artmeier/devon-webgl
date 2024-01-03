@@ -1,6 +1,6 @@
 import { Resource } from "./resource";
 
-// Vertex buffer usage
+// Vertex buffer object usage
 export enum VBOUsage
 {
 	Static,
@@ -8,10 +8,10 @@ export enum VBOUsage
 	Stream
 }
 
-// Vertex buffer class
-export class VertexBuffer extends Resource
+// Vertex buffer object class
+export class VBO extends Resource
 {
-	private static _curBuffer: WebGLBuffer;
+	private static _curBuffer: VBO;
 	
 	private _data: Float32Array;
 	private _buffer: WebGLBuffer;
@@ -41,21 +41,32 @@ export class VertexBuffer extends Resource
 			this._stride += length;
 		}
 		
-		for (let i = 0; i < this._attribLengths.length; i++) {
-			this._gl.enableVertexAttribArray(i);
-			this._gl.vertexAttribPointer(i, this._attribLengths[i], this._gl.FLOAT, false,
-				this._stride * 4, this._attribOffsets[i] * 4);
-		}
-		
 		this._data = new Float32Array(this._vertexCount * this._stride);
 	}
 	
 	// Bind
 	public bind()
 	{
-		if (this._buffer != null && VertexBuffer._curBuffer != this._buffer) {
+		if (VBO._curBuffer != this) {
+			VBO._curBuffer = this;
 			this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._buffer);
-			VertexBuffer._curBuffer = this._buffer;
+		}
+	}
+	
+	// Unbind
+	public unbind()
+	{
+		VBO._curBuffer = null;
+		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
+	}
+	
+	// Set up attributes
+	public setupAttributes()
+	{
+		for (let i = 0; i < this._attribLengths.length; i++) {
+			this._gl.enableVertexAttribArray(i);
+			this._gl.vertexAttribPointer(i, this._attribLengths[i], this._gl.FLOAT, false,
+				this._stride * 4, this._attribOffsets[i] * 4);
 		}
 	}
 	
@@ -68,39 +79,32 @@ export class VertexBuffer extends Resource
 	// Buffer data
 	public bufferData()
 	{
-		if (this._buffer != null) {
-			this.bind();
-			if (!this._created) {
-				// Create buffer data
-				this._gl.bufferData(this._gl.ARRAY_BUFFER, this._data,
-					[this._gl.STATIC_DRAW, this._gl.DYNAMIC_DRAW, this._gl.STREAM_DRAW][this._usage]);	
-				this._created = true;
-			} else {
-				// Modify buffer data
-				this._gl.bufferSubData(this._gl.ARRAY_BUFFER, 0, this._data);
-			}
+		this.bind();
+		if (!this._created) {
+			// Create buffer data
+			this._gl.bufferData(this._gl.ARRAY_BUFFER, this._data,
+				[this._gl.STATIC_DRAW, this._gl.DYNAMIC_DRAW, this._gl.STREAM_DRAW][this._usage]);	
+			this._created = true;
+		} else {
+			// Modify buffer data
+			this._gl.bufferSubData(this._gl.ARRAY_BUFFER, 0, this._data);
 		}
 	}
 	
 	// Draw
 	public draw()
 	{
-		if (this._buffer != null) {
-			this.bind();
-			this._gl.drawArrays(this._gl.TRIANGLES, 0, this._vertexCount);
-		}
+		this.bind();
+		this.setupAttributes();
+		this._gl.drawArrays(this._gl.TRIANGLES, 0, this._vertexCount);
 	}
 	
 	// Delete
 	public delete()
 	{
-		if (VertexBuffer._curBuffer == this._buffer) {
-			VertexBuffer._curBuffer = null;
-			this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
+		if (VBO._curBuffer == this) {
+			this.unbind();
 		}
-		if (this._buffer != null) {
-			this._gl.deleteBuffer(this._buffer);
-		}
-		this._buffer = null;
+		this._gl.deleteBuffer(this._buffer);
 	}
 }

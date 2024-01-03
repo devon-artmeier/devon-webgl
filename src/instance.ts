@@ -2,10 +2,38 @@ import { Color } from "./color";
 import { Resource } from "./resource";
 import { Shader } from "./shader";
 import { Texture, TextureFilter, TextureWrap } from "./texture";
-import { VertexBuffer, VBOUsage } from "./vertex-buffer";
-import { ElementBuffer, EBOUsage } from "./element-buffer";
+import { VBO, VBOUsage } from "./vbo";
+import { EBO, EBOUsage } from "./ebo";
+import { VAO } from "./vao";
+import { FBO } from "./fbo";
 import { Matrix } from "./matrix";
 import { Vector3 } from "./vector";
+
+// Depth function
+export enum DepthFunc
+{
+	Always,
+	Never,
+	Equal,
+	NotEqual,
+	Less,
+	LessEqual,
+	Greater,
+	GreaterEqual
+}
+
+// Stencil action option
+export enum StencilOption
+{
+	Keep,
+	Zero,
+	Replace,
+	Increase,
+	IncreaseWrap,
+	Decrease,
+	DecreaseWrap,
+	Invert
+}
 
 // WebGL instance
 export class WebGLInstance
@@ -42,7 +70,7 @@ export class WebGLInstance
 	public clearScreen(color: Color)
 	{
 		this._gl.clearColor(color.r, color.g, color.b, color.a);
-		this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
+		this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT | this._gl.STENCIL_BUFFER_BIT);
 	}
 	
 	// Enable depth testing
@@ -55,6 +83,30 @@ export class WebGLInstance
 	public disableDepthTest()
 	{
 		this._gl.disable(this._gl.DEPTH_TEST); 
+	}
+	
+	// Set depth mask
+	public setDepthMask(enable: boolean)
+	{
+		this._gl.depthMask(enable); 
+	}
+	
+	// Enable stencil testing
+	public enableStencilTest()
+	{
+		this._gl.enable(this._gl.STENCIL_TEST); 
+	}
+	
+	// Disable stencil testing
+	public disableStencilTest()
+	{
+		this._gl.disable(this._gl.STENCIL_TEST); 
+	}
+	
+	// Set stencil mask
+	public setStencilMask(mask: number)
+	{
+		this._gl.stencilMask(mask); 
 	}
 	
 	/* ---- */
@@ -100,7 +152,7 @@ export class WebGLInstance
 		let z = eye.subtractVector(at).normalize();
 		let x = up.cross(z).normalize();
 		let	y = z.cross(x);
-		
+	
 		return new Matrix([
 			[x.v[0], x.v[1], x.v[2], 0],
 			[y.v[0], y.v[1], y.v[2], 0],
@@ -131,7 +183,7 @@ export class WebGLInstance
 	{
 		let s = Math.sin(angle);
 		let c = Math.cos(angle);
-		
+	
 		return new Matrix([
 			[1,  0,  0,  0],
 			[0,  c,  s,  0],
@@ -145,7 +197,7 @@ export class WebGLInstance
 	{
 		let s = Math.sin(angle);
 		let c = Math.cos(angle);
-		
+	
 		return new Matrix([
 			[c,  0, -s,  0],
 			[0,  1,  0,  0],
@@ -159,7 +211,7 @@ export class WebGLInstance
 	{
 		let s = Math.sin(angle);
 		let c = Math.cos(angle);
-		
+	
 		return new Matrix([
 			[ c,  s,  0,  0],
 			[-s,  c,  0,  0],
@@ -298,6 +350,12 @@ export class WebGLInstance
 		this.addToResourcePool("shaders", id, shader);
 	}
 	
+	// Use shader
+	public useShader(id: string)
+	{
+		(this.getResource("shaders", id) as Shader)?.use();
+	}
+	
 	// Set 1D float value uniform shader attribute
 	public setShaderUniform1f(id: string, name: string, v0: number)
 	{
@@ -399,13 +457,13 @@ export class WebGLInstance
 	{
 		(this.getResource("shaders", id) as Shader)?.setUniformMatrix2fv(name, val);
 	}
-		
+	
 	// Set 3-component matrix uniform shader attribute
 	public setShaderUniformMatrix3fv(id: string, name: string, val: Float32Array)
 	{
 		(this.getResource("shaders", id) as Shader)?.setUniformMatrix3fv(name, val);
 	}
-		
+	
 	// Set 4-component matrix uniform shader attribute
 	public setShaderUniformMatrix4fv(id: string, name: string, val: Float32Array)
 	{
@@ -416,12 +474,6 @@ export class WebGLInstance
 	public getShaderUniform(id: string, name: string)
 	{
 		(this.getResource("shaders", id) as Shader)?.getUniform(name);
-	}
-		
-	// Use shader
-	public useShader(id: string)
-	{
-		(this.getResource("shaders", id) as Shader)?.use();
 	}
 	
 	// Delete shader
@@ -501,128 +553,250 @@ export class WebGLInstance
 		this.deleteResourcePool("textures");
 	}
 	
-	/* ------------- */
-	/* VERTEX BUFFER */
-	/* ------------- */
+	/* -------------------- */
+	/* VERTEX BUFFER OBJECT */
+	/* -------------------- */
 	
-	// Create vertex buffer
+	// Create vertex buffer object
 	public createVBO(id: string, vertexCount: number, attribLengths: number[], usage: VBOUsage)
 	{
-		let buffer = new VertexBuffer(this._gl, vertexCount, attribLengths, usage);
+		let buffer = new VBO(this._gl, vertexCount, attribLengths, usage);
 		this.addToResourcePool("vbos", id, buffer);
 	}
 	
-	// Get vertex buffer vertex count
+	// Get vertex buffer object vertex count
 	public getVBOVertexCount(id: string): number
 	{
-		return (this.getResource("vbos", id) as VertexBuffer)?.vertexCount;
+		return (this.getResource("vbos", id) as VBO)?.vertexCount;
 	}
 	
-	// Get vertex buffer attribute count
+	// Get vertex buffer object attribute count
 	public getVBOAttribCount(id: string): number
 	{
-		return (this.getResource("vbos", id) as VertexBuffer)?.attribCount;
+		return (this.getResource("vbos", id) as VBO)?.attribCount;
 	}
 	
-	// Get vertex buffer attribute lengths
+	// Get vertex buffer object attribute lengths
 	public getVBOAttribLengths(id: string): ReadonlyArray<number>
 	{
-		return (this.getResource("vbos", id) as VertexBuffer)?.attribLengths;
+		return (this.getResource("vbos", id) as VBO)?.attribLengths;
 	}
 	
-	// Get vertex buffer attribute offsets
+	// Get vertex buffer object attribute offsets
 	public getVBOAttribOffsets(id: string): ReadonlyArray<number>
 	{
-		return (this.getResource("vbos", id) as VertexBuffer)?.attribOffsets;
+		return (this.getResource("vbos", id) as VBO)?.attribOffsets;
 	}
 	
-	// Get vertex buffer stride
+	// Get vertex buffer object stride
 	public getVBOStride(id: string): number
 	{
-		return (this.getResource("vbos", id) as VertexBuffer)?.stride;
+		return (this.getResource("vbos", id) as VBO)?.stride;
 	}
 	
-	// Get vertex buffer usage
+	// Get vertex buffer object usage
 	public getVBOUsage(id: string): VBOUsage
 	{
-		return (this.getResource("vbos", id) as VertexBuffer)?.usage;
+		return (this.getResource("vbos", id) as VBO)?.usage;
 	}
 	
-	// Get vertex buffer data
+	// Get vertex buffer object data
 	public getVBOData(id: string): Float32Array
 	{
-		return (this.getResource("vbos", id) as VertexBuffer)?.data;
+		return (this.getResource("vbos", id) as VBO)?.data;
 	}
 	
-	// Set vertex buffer data
+	// Set vertex buffer object data
 	public setVBOData(id: string, data: Float32Array, offset: number)
 	{
-		(this.getResource("vbos", id) as VertexBuffer)?.setData(data, offset);
+		(this.getResource("vbos", id) as VBO)?.setData(data, offset);
 	}
 	
-	// Buffer vertex buffer data
+	// Buffer vertex buffer object data
 	public bufferVBOData(id: string)
 	{
-		(this.getResource("vbos", id) as VertexBuffer)?.bufferData();
+		(this.getResource("vbos", id) as VBO)?.bufferData();
 	}
 	
-	// Draw with vertex buffer
+	// Draw with vertex buffer object
 	public drawVBO(id: string)
 	{
-		(this.getResource("vbos", id) as VertexBuffer)?.draw();
+		(this.getResource("vbos", id) as VBO)?.draw();
 	}
 	
-	// Delete vertex buffer
+	// Delete vertex buffer object
 	public deleteVBO(id: string)
 	{
 		this.deleteResource("vbos", id);
 	}
 	
-	// Delete all vertex buffers
+	// Delete all vertex buffer objects
 	public deleteAllVBOs()
 	{
 		this.deleteResourcePool("vbos");
 	}
 	
-	/* -------------- */
-	/* ELEMENT BUFFER */
-	/* -------------- */
+	/* --------------------- */
+	/* ELEMENT BUFFER OBJECT */
+	/* --------------------- */
 	
-	// Create element buffer
+	// Create element buffer object
 	public createEBO(id: string, count: number, usage: EBOUsage)
 	{
-		let buffer = new ElementBuffer(this._gl, count, usage);
+		let buffer = new EBO(this._gl, count, usage);
 		this.addToResourcePool("ebos", id, buffer);
 	}
 	
-	// Set element buffer data
+	// Set element buffer object data
 	public setEBOData(id: string, data: Uint16Array, offset: number)
 	{
-		(this.getResource("ebos", id) as ElementBuffer)?.setData(data, offset);
+		(this.getResource("ebos", id) as EBO)?.setData(data, offset);
 	}
 	
-	// Buffer element buffer data
+	// Buffer element buffer object data
 	public bufferEBOData(id: string)
 	{
-		(this.getResource("ebos", id) as ElementBuffer)?.bufferData();
+		(this.getResource("ebos", id) as EBO)?.bufferData();
 	}
 	
-	// Draw with vertex buffer and element buffer
+	// Draw with vertex buffer object and element buffer object
 	public drawVBOWithEBO(vboID: string, eboID: string)
 	{
-		let vbo = this.getResource("vbos", vboID) as VertexBuffer;
-		(this.getResource("ebos", eboID) as ElementBuffer)?.draw(vbo);
+		let vbo = this.getResource("vbos", vboID) as VBO;
+		(this.getResource("ebos", eboID) as EBO)?.draw(vbo);
 	}
 	
-	// Delete element buffer
+	// Delete element buffer object
 	public deleteEBO(id: string)
 	{
 		this.deleteResource("ebos", id);
 	}
 	
-	// Delete all element buffers
+	// Delete all element buffer objects
 	public deleteAllEBOs()
 	{
 		this.deleteResourcePool("ebos");
+	}
+	
+	/* ------------------- */
+	/* VERTEX ARRAY OBJECT */
+	/* ------------------- */
+	
+	// Create vertex array object
+	public createVAO(id: string)
+	{
+		let object = new VAO(this._gl);
+		this.addToResourcePool("vaos", id, object);
+	}
+	
+	// Set vertex array object's vertex buffer
+	public setVBOForVAO(vaoID: string, vboID: string)
+	{
+		let vbo = this.getResource("vbos", vboID) as VBO;
+		(this.getResource("vaos", vaoID) as VAO)?.setVBO(vbo);
+	}
+	
+	// Set vertex array object's element buffer
+	public setEBOForVAO(vaoID: string, eboID: string)
+	{
+		let ebo = this.getResource("ebos", eboID) as EBO;
+		(this.getResource("vaos", vaoID) as VAO)?.setEBO(ebo);
+	}
+	
+	// Set vertex array object's buffer objects
+	public setVAOBuffers(vaoID: string, vboID: string, eboID: string)
+	{
+		let vbo = this.getResource("vbos", vboID) as VBO;
+		let ebo = this.getResource("ebos", eboID) as EBO;
+		(this.getResource("vaos", vaoID) as VAO)?.setBuffers(vbo, ebo);
+	}
+	
+	// Draw with vertex array object
+	public drawVAO(id: string)
+	{
+		(this.getResource("vaos", id) as VAO)?.draw();
+	}
+	
+	// Delete vertex array object
+	public deleteVAO(id: string)
+	{
+		this.deleteResource("vaos", id);
+	}
+	
+	// Delete all vertex array objects
+	public deleteAllVAOs()
+	{
+		this.deleteResourcePool("vaos");
+	}
+	
+	/* ------------------ */
+	/* FRAMEBUFFER OBJECT */
+	/* ------------------ */
+	
+	// Create framebuffer object
+	public createFBO(id: string, width: number, height: number)
+	{
+		let buffer = new FBO(this._gl, width, height);
+		this.addToResourcePool("fbos", id, buffer);
+	}
+	
+	// Bind framebuffer object
+	public bindFBO(id: string)
+	{
+		(this.getResource("fbos", id) as FBO)?.bindFBO();
+	}
+	
+	// Unbind framebuffer object
+	public unbindFBO()
+	{
+		FBO.unbindFBO(this._gl);
+	}
+	
+	// Resize framebuffer object texture
+	public resizeFBO(id: string, width: number, height: number)
+	{
+		(this.getResource("fbos", id) as FBO)?.resize(width, height);
+	}
+	
+	// Set framebuffer object filter
+	public setFBOFilter(id: string, filter: TextureFilter)
+	{
+		(this.getResource("fbos", id) as FBO)?.setFilter(filter);
+	}
+	
+	// Set framebuffer object horizontal wrap mode
+	public setFBOWrapX(id: string, mode: TextureWrap)
+	{
+		(this.getResource("fbos", id) as FBO)?.setWrapX(mode);
+	}
+	
+	// Set framebuffer object vertical wrap mode
+	public setFBOWrapY(id: string, mode: TextureWrap)
+	{
+		(this.getResource("fbos", id) as FBO)?.setWrapY(mode);
+	}
+	
+	// Set framebuffer object wrap mode
+	public setFBOWrap(id: string, modeX: TextureWrap, modeY: TextureWrap)
+	{
+		(this.getResource("fbos", id) as FBO)?.setWrap(modeX, modeY);
+	}
+	
+	// Set active texture from framebuffer object
+	public setActiveTextureFBO(id: string, num: number)
+	{
+		(this.getResource("fbos", id) as FBO)?.setActive(num);
+	}
+	
+	// Delete framebuffer object
+	public deleteFBO(id: string)
+	{
+		this.deleteResource("fbos", id);
+	}
+	
+	// Delete all framebuffer objects
+	public deleteAllFBOs()
+	{
+		this.deleteResourcePool("fbos");
 	}
 }
