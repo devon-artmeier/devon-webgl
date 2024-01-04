@@ -10,7 +10,20 @@ import { Matrix } from "./matrix";
 import { Vector3 } from "./vector";
 
 // Depth function
-export enum DepthFunc
+export enum DepthFunction
+{
+	Always,
+	Never,
+	Equal,
+	NotEqual,
+	Less,
+	LessEqual,
+	Greater,
+	GreaterEqual
+}
+
+// Stencil function
+export enum StencilFunction
 {
 	Always,
 	Never,
@@ -43,9 +56,11 @@ export class WebGLInstance
 	// Constructor
 	constructor(private _canvas: HTMLCanvasElement)
 	{
-		this._gl = this._canvas.getContext("webgl2");
+		this._gl = this._canvas.getContext("webgl2",
+			{ alpha: true, stencil: true });
 		this._gl.enable(this._gl.BLEND);
 		this._gl.blendFunc(this._gl.SRC_ALPHA, this._gl.ONE_MINUS_SRC_ALPHA);
+		this._gl.enable(this._gl.DEPTH_TEST); 
 		this._gl.depthFunc(this._gl.LESS);
 		this._gl.depthMask(true); 
 	}
@@ -73,6 +88,26 @@ export class WebGLInstance
 		this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT | this._gl.STENCIL_BUFFER_BIT);
 	}
 	
+	/* -------- */
+	/* BLENDING */
+	/* -------- */
+
+	// Enable blending
+	public enableBlend()
+	{
+		this._gl.enable(this._gl.BLEND);
+	}
+
+	// Disable blending
+	public disableBlend()
+	{
+		this._gl.disable(this._gl.BLEND);
+	}
+	
+	/* ---------- */
+	/* DEPTH TEST */
+	/* ---------- */
+	
 	// Enable depth testing
 	public enableDepthTest()
 	{
@@ -84,12 +119,25 @@ export class WebGLInstance
 	{
 		this._gl.disable(this._gl.DEPTH_TEST); 
 	}
+
+	// Set depth function
+	public setDepthFunction(func: DepthFunction)
+	{
+		this._gl.depthFunc([
+			this._gl.ALWAYS, this._gl.NEVER, this._gl.EQUAL, this._gl.NOTEQUAL,
+			this._gl.LESS, this._gl.LEQUAL, this._gl.GREATER, this._gl.GEQUAL
+		][func]);
+	}
 	
 	// Set depth mask
 	public setDepthMask(enable: boolean)
 	{
 		this._gl.depthMask(enable); 
 	}
+	
+	/* ------------ */
+	/* STENCIL TEST */
+	/* ------------ */
 	
 	// Enable stencil testing
 	public enableStencilTest()
@@ -101,6 +149,25 @@ export class WebGLInstance
 	public disableStencilTest()
 	{
 		this._gl.disable(this._gl.STENCIL_TEST); 
+	}
+
+	// Set stencil function
+	public setStencilFunction(func: StencilFunction, ref: number, mask: number)
+	{
+		this._gl.stencilFunc([
+			this._gl.ALWAYS, this._gl.NEVER, this._gl.EQUAL, this._gl.NOTEQUAL,
+			this._gl.LESS, this._gl.LEQUAL, this._gl.GREATER, this._gl.GEQUAL
+		][func], ref, mask);
+	}
+
+	// Set stencil options
+	public setStencilOptions(sfail: StencilOption, dpfail: StencilOption, dppass: StencilOption)
+	{
+		let ops = [
+			this._gl.KEEP, this._gl.ZERO, this._gl.REPLACE, this._gl.INCR,
+			this._gl.INCR_WRAP, this._gl.DECR, this._gl.DECR_WRAP, this._gl.INVERT
+		];
+		this._gl.stencilOp(ops[sfail], ops[dpfail], ops[dppass]);
 	}
 	
 	// Set stencil mask
