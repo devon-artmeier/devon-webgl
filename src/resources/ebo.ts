@@ -10,10 +10,11 @@ export enum EBOUsage
 }
 
 // Element buffer object class
-export class EBO extends Resource
+export class EBO implements Resource
 {
 	private static _curBuffer: EBO;
 	
+	private _gl: WebGL2RenderingContext;
 	private _data: Uint16Array;
 	private _buffer: WebGLBuffer;
 	private _created: boolean = false;
@@ -25,7 +26,7 @@ export class EBO extends Resource
 	// Constructor
 	constructor(gl: WebGL2RenderingContext, private _count: number, private _usage: EBOUsage)
 	{
-		super(gl);
+		this._gl = gl;
 		this._buffer = this._gl.createBuffer();
 		this._data = new Uint16Array(this._count);
 	}

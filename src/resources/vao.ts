@@ -3,8 +3,9 @@ import { VBO } from "./vbo";
 import { EBO } from "./ebo";
 
 // Vertex array object class
-export class VAO extends Resource
+export class VAO implements Resource
 {
+	private _gl: WebGL2RenderingContext;
 	private _object: WebGLVertexArrayObject;
 	private _vbo: VBO;
 	private _ebo: EBO;
@@ -12,7 +13,7 @@ export class VAO extends Resource
 	// Constructor
 	constructor(gl: WebGL2RenderingContext)
 	{
-		super(gl);
+		this._gl = gl;
 		this._object = this._gl.createVertexArray();
 	}
 	

@@ -1,9 +1,14 @@
 import { WebGLInstance, DepthFunction, StencilFunction, StencilOption } from "./instance";
-import { TextureFilter, TextureWrap } from "./texture";
-import { Color } from "./color";
-import { VBOUsage } from "./vbo";
-import { EBOUsage } from "./ebo";
-import { Vector3 } from "./vector";
+import { TextureFilter, TextureWrap } from "./types/texture-enums";
+import { Color } from "./types/color";
+import { BufferUsage } from "./resources/buffer-enums";
+import { EBOUsage } from "./resources/ebo";
+import { Vector3 } from "./types/vector";
+
+import { Context } from "./functions/context"
+import { Texture } from "./functions/texture"
+import { Shader } from "./functions/shader"
+import { VertexBuffer } from "./functions/vertex-buffer"
 
 // Vertex shader code
 const vertexShaderCode =
@@ -54,15 +59,15 @@ void main(void)
 }
 `;
 
-const gl = new WebGLInstance(document.getElementById("test-canvas") as HTMLCanvasElement);
+Context.create("main", document.getElementById("test-canvas") as HTMLCanvasElement);
 
-gl.createTexture("texture_test");
-gl.setTextureFilter("texture_test", TextureFilter.Bilinear);
-gl.setTextureWrap("texture_test", TextureWrap.Clamp, TextureWrap.Clamp);
-gl.loadTextureImage("texture_test", "./img/test.png");
+Texture.create("main", "texture_test");
+Texture.setFilter("main", "texture_test", TextureFilter.Bilinear);
+Texture.setWrap("main", "texture_test", TextureWrap.Clamp, TextureWrap.Clamp);
+Texture.loadImage("main", "texture_test", "./img/test.png");
 
-gl.createShader("shader_main", vertexShaderCode, fragShaderCode);
-gl.createShader("shader_main2", vertexShaderCode, fragShaderCode2);
+Shader.create("main", "shader_main", vertexShaderCode, fragShaderCode);
+Shader.create("main", "shader_main2", vertexShaderCode, fragShaderCode2);
 
 const cubeVertices = new Float32Array([
 	-64, -64,  64,  0, 1,
@@ -95,9 +100,9 @@ const cubeVertices = new Float32Array([
 	-64,  64, -64,  0, 0,
 	 64,  64, -64,  1, 0,
 ]);
-gl.createVBO("vbo_cube", 24, [3, 2], VBOUsage.Static);
-gl.setVBOData("vbo_cube", cubeVertices, 0);
-gl.bufferVBOData("vbo_cube");
+VertexBuffer.create("main", "vbo_cube", 24, [3, 2], BufferUsage.Static);
+VertexBuffer.setData("main", "vbo_cube", cubeVertices, 0);
+VertexBuffer.bufferData("main", "vbo_cube");
 
 const elementsCube = new Uint16Array([
 	0,  1,  2,  1,  2,  3,
@@ -117,9 +122,9 @@ const squareVertices = new Float32Array([
 	-64,  64,  64,  0, 0,
 	 64,  64,  64,  1, 0
 ]);
-gl.createVBO("vbo_square", 4, [3, 2], VBOUsage.Static);
-gl.setVBOData("vbo_square", squareVertices, 0);
-gl.bufferVBOData("vbo_square");
+VertexBuffer.create("main", "vbo_square", 4, [3, 2], BufferUsage.Static);
+VertexBuffer.setData("main", "vbo_square", squareVertices, 0);
+VertexBuffer.bufferData("main", "vbo_square");
 
 const elementsSquare = new Uint16Array([
 	0,  1,  2,  1,  2,  3
@@ -161,13 +166,13 @@ function render(time: number)
 
 	let view = gl.lookAtMatrix(new Vector3([x,z,256]), new Vector3([0,0,0]), new Vector3([0,1,0]));
 	
-	gl.setShaderUniformMatrix4fv("shader_main", "model", model.flat());
-	gl.setShaderUniformMatrix4fv("shader_main", "view", view.flat());
-	gl.setShaderUniformMatrix4fv("shader_main", "projection", ortho.flat());;
+	Shader.setUniformMatrix4fv("main", "shader_main", "model", model.flat());
+	Shader.setUniformMatrix4fv("main", "shader_main", "view", view.flat());
+	Shader.setUniformMatrix4fv("main", "shader_main", "projection", ortho.flat());;
 
-	gl.useShader("shader_main");
-	gl.setActiveTexture("texture_test", 0);
-	gl.setShaderUniform1i("shader_main", "txt", 0);
+	Shader.use("main", "shader_main");
+	Texture.setActive("main", "texture_test", 0);
+	Shader.setUniform1i("main", "shader_main", "txt", 0);
 	gl.drawVAO("vao_cube");
 	
 	///////////////////////////////////////////////////////////////
@@ -180,11 +185,11 @@ function render(time: number)
 	model = model.multiply(gl.rotateMatrix(gl.degToRad(time/25),gl.degToRad(time/25),gl.degToRad(time/25)));
 	model = model.multiply(gl.scaleMatrix(1.1, 1.1, 1.1));
 	
-	gl.setShaderUniformMatrix4fv("shader_main2", "model", model.flat());
-	gl.setShaderUniformMatrix4fv("shader_main2", "view", view.flat());
-	gl.setShaderUniformMatrix4fv("shader_main2", "projection", ortho.flat());
+	Shader.setUniformMatrix4fv("main", "shader_main2", "model", model.flat());
+	Shader.setUniformMatrix4fv("main", "shader_main2", "view", view.flat());
+	Shader.setUniformMatrix4fv("main", "shader_main2", "projection", ortho.flat());;
 
-	gl.useShader("shader_main2");
+	Shader.use("main", "shader_main2");
 	gl.drawVAO("vao_cube");
 	
 	gl.setStencilMask(0xFF);

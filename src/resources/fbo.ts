@@ -1,8 +1,7 @@
-import { Texture } from "./texture";
-import { Color } from "./color";
+import { TextureObject } from "./texture";
 
 // Framebuffer object class
-export class FBO extends Texture
+export class FBO extends TextureObject
 {
 	private static _curBuffer: FBO;
 	
