@@ -1,14 +1,15 @@
-import { WebGLInstance, DepthFunction, StencilFunction, StencilOption } from "./instance";
-import { TextureFilter, TextureWrap } from "./types/texture-enums";
+import { TextureFilter, TextureWrap, BufferUsage, Condition, StencilOption } from "./types/enums";
 import { Color } from "./types/color";
-import { BufferUsage } from "./resources/buffer-enums";
-import { EBOUsage } from "./resources/ebo";
 import { Vector3 } from "./types/vector";
 
 import { Context } from "./functions/context"
 import { Texture } from "./functions/texture"
 import { Shader } from "./functions/shader"
 import { VertexBuffer } from "./functions/vertex-buffer"
+import { ElementBuffer } from "./functions/element-buffer"
+import { VertexArray } from "./functions/vertex-array"
+import { Framebuffer } from "./functions/framebuffer"
+import { WebGLMath } from "./functions/math"
 
 // Vertex shader code
 const vertexShaderCode =
@@ -112,9 +113,9 @@ const elementsCube = new Uint16Array([
 	16, 17, 18, 17, 18, 19,
 	20, 21, 22, 21, 22, 23
 ]);
-gl.createEBO("ebo_cube", 36, EBOUsage.Static);
-gl.setEBOData("ebo_cube", elementsCube, 0);
-gl.bufferEBOData("ebo_cube");
+ElementBuffer.create("main", "ebo_cube", 36, BufferUsage.Static);
+ElementBuffer.setData("main", "ebo_cube", elementsCube, 0);
+ElementBuffer.bufferData("main", "ebo_cube");
 
 const squareVertices = new Float32Array([
 	-64, -64,  64,  0, 1,
@@ -129,72 +130,108 @@ VertexBuffer.bufferData("main", "vbo_square");
 const elementsSquare = new Uint16Array([
 	0,  1,  2,  1,  2,  3
 ]);
-gl.createEBO("ebo_square", 6, EBOUsage.Static);
-gl.setEBOData("ebo_square", elementsSquare, 0);
-gl.bufferEBOData("ebo_square");
+ElementBuffer.create("main", "ebo_square", 6, BufferUsage.Static);
+ElementBuffer.setData("main", "ebo_square", elementsSquare, 0);
+ElementBuffer.bufferData("main", "ebo_square");
 
-gl.createVAO("vao_cube");
-gl.setVAOBuffers("vao_cube", "vbo_cube", "ebo_cube");
+VertexArray.create("main", "vao_cube");
+VertexArray.setBuffers("main", "vao_cube", "vbo_cube", "ebo_cube");
 
-gl.createVAO("vao_square");
-gl.setVAOBuffers("vao_square", "vbo_square", "ebo_square");
+VertexArray.create("main", "vao_square");
+VertexArray.setBuffers("main", "vao_square", "vbo_square", "ebo_square");
 
-gl.createFBO("fbo", 256, 256);
+Framebuffer.create("main", "fbo", 256, 256);
 
-let ortho = gl.orthoMatrix(-160, 160, -112, 112, 0.1, 512);
-ortho = gl.perspectiveMatrix(60, 640, 480, 0.1, 1000);
+let ortho = WebGLMath.orthoMatrix(-160, 160, -112, 112, 0.1, 512);
 
-gl.setViewport(0, 0, 640, 480);
-gl.enableDepthTest();
-gl.enableStencilTest();
-gl.setStencilOptions(StencilOption.Keep, StencilOption.Keep, StencilOption.Replace);
+Context.enableDepth("main");
+Context.enableStencil("main");
+Context.setStencilOptions("main", StencilOption.Keep, StencilOption.Keep, StencilOption.Replace);
 
 function render(time: number)
 {
-	gl.clearScreen(Color.FromRGBA(1, 0, 1, 1));
-	
 	///////////////////////////////////////////////////////////////
 	
-	gl.setStencilFunction(StencilFunction.Always, 1, 0xFF);
-	gl.setStencilMask(0xFF)
-
-	let model = gl.translateMatrix(0, 0, 0);
-	model = model.multiply(gl.rotateMatrix(gl.degToRad(time/25),gl.degToRad(time/25),gl.degToRad(time/25)));
+	Framebuffer.bind("main", "fbo");
+	Context.setViewport("main", 0, 0, 256, 256);
+	Context.clear("main", Color.FromRGBA(1, 0, 1, 1));
 	
-	let x = Math.cos(gl.degToRad(time/4))*256;
-	let z = Math.sin(gl.degToRad(time/4))*256;
+	ortho = WebGLMath.perspectiveMatrix(60, 256, 256, 0.1, 1000);
 
-	let view = gl.lookAtMatrix(new Vector3([x,z,256]), new Vector3([0,0,0]), new Vector3([0,1,0]));
+	Context.setStencilFunction("main", Condition.Always, 1, 0xFF);
+	Context.setStencilMask("main", 0xFF);
+
+	let model = WebGLMath.translateMatrix(0, 0, 0);
+	model = model.multiply(WebGLMath.rotateMatrix(
+		WebGLMath.degToRad(time/25),WebGLMath.degToRad(time/25),WebGLMath.degToRad(time/25)));
+	
+	let x = Math.cos(WebGLMath.degToRad(time/4))*256;
+	let z = Math.sin(WebGLMath.degToRad(time/4))*256;
+
+	let view = WebGLMath.lookAtMatrix(new Vector3([x,z,128]), new Vector3([0,0,0]), new Vector3([0,1,0]));
 	
 	Shader.setUniformMatrix4fv("main", "shader_main", "model", model.flat());
 	Shader.setUniformMatrix4fv("main", "shader_main", "view", view.flat());
 	Shader.setUniformMatrix4fv("main", "shader_main", "projection", ortho.flat());;
 
-	Shader.use("main", "shader_main");
-	Texture.setActive("main", "texture_test", 0);
+	Shader.bind("main", "shader_main");
+	Texture.setActive("main", 0);
+	Texture.bind("main", "texture_test");
 	Shader.setUniform1i("main", "shader_main", "txt", 0);
-	gl.drawVAO("vao_cube");
+	VertexArray.draw("main", "vao_cube");
+	
+	Framebuffer.unbind("main");
+	
+	///////////////////////////////////////////////////////////////
+
+	Context.setViewport("main", 0, 0, 640, 480);
+	Context.clear("main", Color.FromRGBA(1, 0, 1, 1));
+	
+	ortho = WebGLMath.perspectiveMatrix(60, 640, 480, 0.1, 1000);
+	
+	Context.setStencilFunction("main", Condition.Always, 1, 0xFF);
+	Context.setStencilMask("main", 0xFF)
+
+	model = WebGLMath.translateMatrix(0, 0, 0);
+	model = model.multiply(WebGLMath.rotateMatrix(
+		WebGLMath.degToRad(time/25),WebGLMath.degToRad(time/25),WebGLMath.degToRad(time/25)));
+	
+	x = Math.cos(WebGLMath.degToRad(time/4))*256;
+	z = Math.sin(WebGLMath.degToRad(time/4))*256;
+
+	view = WebGLMath.lookAtMatrix(new Vector3([x,z,256]), new Vector3([0,0,0]), new Vector3([0,1,0]));
+	
+	Shader.setUniformMatrix4fv("main", "shader_main", "model", model.flat());
+	Shader.setUniformMatrix4fv("main", "shader_main", "view", view.flat());
+	Shader.setUniformMatrix4fv("main", "shader_main", "projection", ortho.flat());;
+
+	Shader.bind("main", "shader_main");
+	Texture.setActive("main", 0);
+	Framebuffer.bindTexture("main", "fbo");
+	Shader.setUniform1i("main", "shader_main", "txt", 0);
+	VertexArray.draw("main", "vao_cube");
 	
 	///////////////////////////////////////////////////////////////
 	
-	gl.setStencilFunction(StencilFunction.NotEqual, 1, 0xFF);
-	gl.setStencilMask(0x00);
-	gl.disableDepthTest();
+	Context.setStencilFunction("main", Condition.NotEqual, 1, 0xFF);
+	Context.setStencilMask("main", 0x00);
+	Context.disableDepth("main");
 	
-	model = gl.translateMatrix(0, 0, 0);
-	model = model.multiply(gl.rotateMatrix(gl.degToRad(time/25),gl.degToRad(time/25),gl.degToRad(time/25)));
-	model = model.multiply(gl.scaleMatrix(1.1, 1.1, 1.1));
+	model = WebGLMath.translateMatrix(0, 0, 0);
+	model = model.multiply(WebGLMath.rotateMatrix(
+		WebGLMath.degToRad(time/25),WebGLMath.degToRad(time/25),WebGLMath.degToRad(time/25)));
+	model = model.multiply(WebGLMath.scaleMatrix(1.1, 1.1, 1.1));
 	
 	Shader.setUniformMatrix4fv("main", "shader_main2", "model", model.flat());
 	Shader.setUniformMatrix4fv("main", "shader_main2", "view", view.flat());
 	Shader.setUniformMatrix4fv("main", "shader_main2", "projection", ortho.flat());;
 
-	Shader.use("main", "shader_main2");
-	gl.drawVAO("vao_cube");
+	Shader.bind("main", "shader_main2");
+	VertexArray.draw("main", "vao_cube");
 	
-	gl.setStencilMask(0xFF);
-	gl.setStencilFunction(StencilFunction.Always, 1, 0xFF);
-	gl.enableDepthTest();
+	Context.setStencilMask("main", 0xFF);
+	Context.setStencilFunction("main", Condition.Always, 1, 0xFF);
+	Context.enableDepth("main");
 	
 	requestAnimationFrame(render);
 }

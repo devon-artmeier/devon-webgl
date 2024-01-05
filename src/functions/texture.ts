@@ -1,17 +1,17 @@
 import { Resource } from "../resources/resource";
-import { ResourceManager } from "../resources/resource-manager";
-import { ContextObject } from "../resources/context";
-import { TextureFilter, TextureWrap } from "../types/texture-enums";
+import { Context } from "./context";
+import { ContextCollection } from "../resources/context-collection";
+import { TextureFilter, TextureWrap } from "../types/enums";
 import { Color } from "../types/color";
 
 export class Texture extends Resource
 {
-	protected _texture: WebGLTexture;
-	protected _width: number = 1;
-	protected _height: number = 1;
-	protected _filter: TextureFilter = TextureFilter.Bilinear;
-	protected _wrapX: TextureWrap = TextureWrap.Repeat;
-	protected _wrapY: TextureWrap = TextureWrap.Repeat;
+	private _texture: WebGLTexture;
+	private _width: number = 1;
+	private _height: number = 1;
+	private _filter: TextureFilter = TextureFilter.Bilinear;
+	private _wrapX: TextureWrap = TextureWrap.Repeat;
+	private _wrapY: TextureWrap = TextureWrap.Repeat;
 	private _tempBind: boolean = false;
 	
 	get width(): number { return this._width; }
@@ -25,26 +25,25 @@ export class Texture extends Resource
 	/**************************/
 	
 	// Constructor
-	private constructor(context: ContextObject, id: string)
+	private constructor(context: Context, id: string)
 	{
 		super(context, id);
-		let gl = context.gl;
+		let gl = this._context.gl;
 
 		this._texture = gl.createTexture();
+
 		this.tempBind();
-		
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-		
 		this.tempUnbind();
 	}
 	
 	// Temporary bind
 	public tempBind()
 	{
-		if (this._context.textures.bind.id != this.id) {
+		if (this._context.textures.bind?.id != this.id) {
 			let gl = this._context.gl;
 			gl.bindTexture(gl.TEXTURE_2D, this._texture);
 			this._tempBind = true;
@@ -163,13 +162,10 @@ export class Texture extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		if (this._context.textures.bind.id == this.id) {
+		if (this._context.textures.bind?.id == this.id) {
 			Texture.unbind(this._context.id);
 		}
 		gl.deleteTexture(this._texture);
-		this._texture = null;
-		this._width = 0;
-		this._height = 0;
 	}
 	
 	/********************/
@@ -179,28 +175,28 @@ export class Texture extends Resource
 	// Get texture
 	private static getTexture(contextID: string, textureID: string): Texture
 	{
-		return ContextObject.get(contextID).textures.get(textureID) as Texture;
+		return ContextCollection.get(contextID).textures.get(textureID) as Texture;
 	}
 
 	// Create
 	public static create(contextID: string, textureID: string)
 	{
-		let context = ContextObject.get(contextID);
+		let context = ContextCollection.get(contextID);
 		if (context != null) {
 			let texture = new Texture(context, textureID);
-			ContextObject.get(contextID).textures.add(contextID, texture);
+			ContextCollection.get(contextID).textures.add(textureID, texture);
 		}
 	}
 	
 	// Bind
 	public static bind(contextID: string, textureID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
+		let gl = ContextCollection.get(contextID)?.gl;
 		let texture = this.getTexture(contextID, textureID);
 		if (gl != null) {
-			if (ContextObject.get(contextID).textures.bind != texture) {
+			if (ContextCollection.get(contextID).textures.bind != texture) {
 				gl.bindTexture(gl.TEXTURE_2D, texture._texture);
-				ContextObject.get(contextID).textures.bind = texture;
+				ContextCollection.get(contextID).textures.bind = texture;
 			}
 		}
 	}
@@ -208,18 +204,18 @@ export class Texture extends Resource
 	// Unbind
 	public static unbind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
-		if (gl != null) {
+		let gl = ContextCollection.get(contextID)?.gl;
+		if (gl != null && ContextCollection.get(contextID).textures.bind != null) {
 			gl.bindTexture(gl.TEXTURE_2D, null);
-			ContextObject.get(contextID).textures.bind = null;
+			ContextCollection.get(contextID).textures.bind = null;
 		}
 	}
 	
 	// Rebind
-	private static rebind(contextID: string)
+	public static rebind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID).gl;
-		let texture = this.getTexture(contextID, ContextObject.get(contextID).textures.bind.id);
+		let gl = ContextCollection.get(contextID).gl;
+		let texture = this.getTexture(contextID, ContextCollection.get(contextID).textures.bind?.id);
 		if (gl != null && texture != null) {
 			gl.bindTexture(gl.TEXTURE_2D, texture._texture);
 		}
@@ -282,7 +278,7 @@ export class Texture extends Resource
 	// Set active texture number
 	public static setActive(contextID: string, num: number)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
+		let gl = ContextCollection.get(contextID)?.gl;
 		if (gl != null) {
 			gl.activeTexture(gl.TEXTURE0 + num);
 		}
@@ -303,12 +299,12 @@ export class Texture extends Resource
 	// Delete
 	public static delete(contextID: string, textureID: string)
 	{
-		ContextObject.get(contextID).textures.delete(textureID);
+		ContextCollection.get(contextID).textures.delete(textureID);
 	}
 	
 	// Delete all textures
 	public static clear(contextID: string)
 	{
-		ContextObject.get(contextID).textures.clear();
+		ContextCollection.get(contextID).textures.clear();
 	}
 }

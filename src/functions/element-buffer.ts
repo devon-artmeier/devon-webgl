@@ -1,8 +1,8 @@
 import { Resource } from "../resources/resource";
-import { ResourceManager } from "../resources/resource-manager";
-import { ContextObject } from "../resources/context";
+import { Context } from "./context";
+import { ContextCollection } from "../resources/context-collection";
 import { VertexBuffer } from "./vertex-buffer";
-import { BufferUsage } from "../types/buffer-enums";
+import { BufferUsage } from "../types/enums";
 
 export class ElementBuffer extends Resource
 {
@@ -20,19 +20,19 @@ export class ElementBuffer extends Resource
 	/**************************/
 	
 	// Constructor
-	constructor(context: ContextObject, id: string, private _count: number, private _usage: BufferUsage)
+	constructor(context: Context, id: string, private _count: number, private _usage: BufferUsage)
 	{
 		super(context, id);
-		let gl = context.gl;
+		let gl = this._context.gl;
 		
 		this._buffer = gl.createBuffer();
 		this._data = new Uint16Array(this._count);
 	}
 	
 	// Temporary bind
-	private tempBind()
+	public tempBind()
 	{
-		if (this._context.ebos.bind.id != this.id) {
+		if (this._context.ebos.bind?.id != this.id) {
 			let gl = this._context.gl;
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._buffer);
 			this._tempBind = true;
@@ -40,7 +40,7 @@ export class ElementBuffer extends Resource
 	}
 	
 	// Unbind temporary bind
-	private tempUnbind()
+	public tempUnbind()
 	{
 		if (this._tempBind) {
 			ElementBuffer.rebind(this._context.id);
@@ -95,39 +95,37 @@ export class ElementBuffer extends Resource
 			ElementBuffer.unbind(this._context.id);
 		}
 		gl.deleteBuffer(this._buffer);
-		this._buffer = null;
-		this._count = 0;
 	}
 	
 	/********************/
 	/* STATIC FUNCTIONS */
 	/********************/
 	
-	// Get ElementBuffer
+	// Get element buffer
 	private static getEBO(contextID: string, eboID: string): ElementBuffer
 	{
-		return ContextObject.get(contextID).ebos.get(eboID) as ElementBuffer;
+		return ContextCollection.get(contextID).ebos.get(eboID) as ElementBuffer;
 	}
 	
 	// Create
 	public static create(contextID: string, eboID: string, count: number, usage: BufferUsage)
 	{
-		let context = ContextObject.get(contextID);
+		let context = ContextCollection.get(contextID);
 		if (context != null) {
 			let ebo = new ElementBuffer(context, eboID, count, usage);
-			ContextObject.get(contextID).ebos.add(eboID, ebo);
+			ContextCollection.get(contextID).ebos.add(eboID, ebo);
 		}
 	}
 
 	// Bind
 	public static bind(contextID: string, eboID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
+		let gl = ContextCollection.get(contextID)?.gl;
 		let ebo = this.getEBO(contextID, eboID);
 		if (gl != null && ebo != null) {
-			if (ContextObject.get(contextID).ebos.bind != ebo) {
+			if (ContextCollection.get(contextID).ebos.bind != ebo) {
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo._buffer);
-				ContextObject.get(contextID).ebos.bind = ebo;
+				ContextCollection.get(contextID).ebos.bind = ebo;
 			}
 		}
 	}
@@ -135,18 +133,18 @@ export class ElementBuffer extends Resource
 	// Unbind
 	public static unbind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
-		if (gl != null) {
+		let gl = ContextCollection.get(contextID)?.gl;
+		if (gl != null && ContextCollection.get(contextID).ebos.bind != null) {
 			gl.useProgram(null);
-			ContextObject.get(contextID).ebos.bind = null;
+			ContextCollection.get(contextID).ebos.bind = null;
 		}
 	}
 	
 	// Rebind
 	private static rebind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID).gl;
-		let ebo = ContextObject.get(contextID)?.ebos.bind as ElementBuffer;
+		let gl = ContextCollection.get(contextID).gl;
+		let ebo = ContextCollection.get(contextID)?.ebos.bind as ElementBuffer;
 		if (gl != null && ebo != null) {
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo._buffer);
 		}
@@ -185,18 +183,19 @@ export class ElementBuffer extends Resource
 	// Draw with vertex buffer
 	public static draw(contextID: string, eboID: string, vboID: string)
 	{
-		this.getEBO(contextID, eboID)?.bufferData();
+		let vbo = ContextCollection.get(contextID).vbos.get(vboID) as VertexBuffer;
+		this.getEBO(contextID, eboID)?.draw(vbo);
 	}
 	
 	// Delete
 	public static delete(contextID: string, eboID: string)
 	{
-		ContextObject.get(contextID).ebos.delete(eboID);
+		ContextCollection.get(contextID).ebos.delete(eboID);
 	}
 	
 	// Delete all vertex buffers
 	public static clear(contextID: string)
 	{
-		ContextObject.get(contextID).ebos.clear();
+		ContextCollection.get(contextID).ebos.clear();
 	}
 }

@@ -1,6 +1,6 @@
 import { Resource } from "../resources/resource";
-import { ResourceManager } from "../resources/resource-manager";
-import { ContextObject } from "../resources/context";
+import { Context } from "./context";
+import { ContextCollection } from "../resources/context-collection";
 
 export class Shader extends Resource
 {
@@ -12,10 +12,10 @@ export class Shader extends Resource
 	/**************************/
 	
 	// Constructor
-	constructor(context: ContextObject, id: string, vertexCode: string, fragCode: string)
+	constructor(context: Context, id: string, vertexCode: string, fragCode: string)
 	{
 		super(context, id);
-		let gl = context.gl;
+		let gl = this._context.gl;
 		
 		let vertexShader = gl.createShader(gl.VERTEX_SHADER);
 		gl.shaderSource(vertexShader, vertexCode);
@@ -37,7 +37,7 @@ export class Shader extends Resource
 	// Temporary bind
 	public tempBind()
 	{
-		if (this._context.shaders.bind.id != this.id) {
+		if (this._context.shaders.bind?.id != this.id) {
 			let gl = this._context.gl;
 			gl.useProgram(this._program);
 			this._tempBind = true;
@@ -242,11 +242,10 @@ export class Shader extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		if (this._context.shaders.bind.id == this.id) {
+		if (this._context.shaders.bind?.id == this.id) {
 			Shader.unbind(this._context.id);
 		}
 		gl.deleteProgram(this._program);
-		this._program = null;
 	}
 	
 	/********************/
@@ -256,28 +255,28 @@ export class Shader extends Resource
 	// Get shader
 	private static getShader(contextID: string, shaderID: string): Shader
 	{
-		return ContextObject.get(contextID).shaders.get(shaderID) as Shader;
+		return ContextCollection.get(contextID).shaders.get(shaderID) as Shader;
 	}
 	
 	// Create
 	public static create(contextID: string, shaderID: string, vertexCode: string, fragCode: string)
 	{
-		let context = ContextObject.get(contextID);
+		let context = ContextCollection.get(contextID);
 		if (context != null) {
 			let shader = new Shader(context, shaderID, vertexCode, fragCode);
-			ContextObject.get(contextID).shaders.add(shaderID, shader);
+			ContextCollection.get(contextID).shaders.add(shaderID, shader);
 		}
 	}
 
 	// Bind
 	public static bind(contextID: string, shaderID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
+		let gl = ContextCollection.get(contextID)?.gl;
 		let shader = this.getShader(contextID, shaderID);
 		if (gl != null) {
-			if (ContextObject.get(contextID).shaders.bind = shader) {
+			if (ContextCollection.get(contextID).shaders.bind = shader) {
 				gl.useProgram(shader._program);
-				ContextObject.get(contextID).shaders.bind = shader;
+				ContextCollection.get(contextID).shaders.bind = shader;
 			}
 		}
 	}
@@ -285,18 +284,18 @@ export class Shader extends Resource
 	// Unbind
 	public static unbind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
-		if (gl != null) {
+		let gl = ContextCollection.get(contextID)?.gl;
+		if (gl != null && ContextCollection.get(contextID).shaders.bind != null) {
 			gl.useProgram(null);
-			ContextObject.get(contextID).shaders.bind = null;
+			ContextCollection.get(contextID).shaders.bind = null;
 		}
 	}
 	
 	// Rebind
 	private static rebind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID).gl;
-		let shader = this.getShader(contextID, ContextObject.get(contextID).textures.bind.id);
+		let gl = ContextCollection.get(contextID).gl;
+		let shader = this.getShader(contextID, ContextCollection.get(contextID).textures.bind?.id);
 		if (gl != null && shader != null) {
 			gl.useProgram(shader._program);
 		}
@@ -429,12 +428,12 @@ export class Shader extends Resource
 	// Delete
 	public static delete(contextID: string, shaderID: string)
 	{
-		ContextObject.get(contextID).shaders.delete(shaderID);
+		ContextCollection.get(contextID).shaders.delete(shaderID);
 	}
 	
 	// Delete all shaders
 	public static clear(contextID: string)
 	{
-		ContextObject.get(contextID).shaders.clear();
+		ContextCollection.get(contextID).shaders.clear();
 	}
 }

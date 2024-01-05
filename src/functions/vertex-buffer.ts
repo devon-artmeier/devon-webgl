@@ -1,7 +1,7 @@
 import { Resource } from "../resources/resource";
-import { ResourceManager } from "../resources/resource-manager";
-import { ContextObject } from "../resources/context";
-import { BufferUsage } from "../types/buffer-enums";
+import { Context } from "./context";
+import { ContextCollection } from "../resources/context-collection";
+import { BufferUsage } from "../types/enums";
 
 export class VertexBuffer extends Resource
 {
@@ -25,11 +25,11 @@ export class VertexBuffer extends Resource
 	/**************************/
 	
 	// Constructor
-	constructor(context: ContextObject, id: string, private _vertexCount: number,
+	constructor(context: Context, id: string, private _vertexCount: number,
 		private _attribLengths: number[], private _usage: BufferUsage)
 	{
 		super(context, id);
-		let gl = context.gl;
+		let gl = this._context.gl;
 		
 		this._buffer = gl.createBuffer();
 					
@@ -46,7 +46,7 @@ export class VertexBuffer extends Resource
 	// Temporary bind
 	public tempBind()
 	{
-		if (this._context.vbos.bind.id != this.id) {
+		if (this._context.vbos.bind?.id != this.id) {
 			let gl = this._context.gl;
 			gl.bindBuffer(gl.ARRAY_BUFFER, this._buffer);
 			this._tempBind = true;
@@ -116,43 +116,38 @@ export class VertexBuffer extends Resource
 			VertexBuffer.unbind(this._context.id);
 		}
 		gl.deleteBuffer(this._buffer);
-		this._buffer = null;
-		this._vertexCount = 0;
-		this._attribLengths = Array(0);
-		this._attribOffsets = Array(0);
-		this._stride = 0;
 	}
 	
 	/********************/
 	/* STATIC FUNCTIONS */
 	/********************/
 	
-	// Get VertexBuffer
+	// Get vertex buffer
 	private static getVBO(contextID: string, vboID: string): VertexBuffer
 	{
-		return ContextObject.get(contextID)?.vbos.get(vboID) as VertexBuffer;
+		return ContextCollection.get(contextID)?.vbos.get(vboID) as VertexBuffer;
 	}
 	
 	// Create
 	public static create(contextID: string, vboID: string, vertexCount: number,
 		attribLengths: number[], usage: BufferUsage)
 	{
-		let context = ContextObject.get(contextID);
+		let context = ContextCollection.get(contextID);
 		if (context != null) {
 			let vbo = new VertexBuffer(context, vboID, vertexCount, attribLengths, usage);
-			ContextObject.get(contextID)?.vbos.add(vboID, vbo);
+			ContextCollection.get(contextID)?.vbos.add(vboID, vbo);
 		}
 	}
 
 	// Bind
 	public static bind(contextID: string, vboID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
+		let gl = ContextCollection.get(contextID)?.gl;
 		let vbo = this.getVBO(contextID, vboID);
 		if (gl != null && vbo != null) {
-			if (ContextObject.get(contextID).ebos.bind != vbo) {
+			if (ContextCollection.get(contextID).ebos.bind != vbo) {
 				gl.bindBuffer(gl.ARRAY_BUFFER, vbo._buffer);
-				ContextObject.get(contextID).vbos.bind = vbo;
+				ContextCollection.get(contextID).vbos.bind = vbo;
 			}
 		}
 	}
@@ -160,18 +155,18 @@ export class VertexBuffer extends Resource
 	// Unbind
 	public static unbind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID)?.gl;
-		if (gl != null) {
+		let gl = ContextCollection.get(contextID)?.gl;
+		if (gl != null && ContextCollection.get(contextID).vbos.bind != null) {
 			gl.useProgram(null);
-			ContextObject.get(contextID).vbos.bind = null;
+			ContextCollection.get(contextID).vbos.bind = null;
 		}
 	}
 	
 	// Rebind
 	private static rebind(contextID: string)
 	{
-		let gl = ContextObject.get(contextID).gl;
-		let vbo = ContextObject.get(contextID)?.vbos.bind as VertexBuffer;
+		let gl = ContextCollection.get(contextID).gl;
+		let vbo = ContextCollection.get(contextID)?.vbos.bind as VertexBuffer;
 		if (gl != null && vbo != null) {
 			gl.bindBuffer(gl.ARRAY_BUFFER, vbo._buffer);
 		}
@@ -234,12 +229,12 @@ export class VertexBuffer extends Resource
 	// Delete
 	public static delete(contextID: string, vboID: string)
 	{
-		ContextObject.get(contextID).vbos.delete(vboID);
+		ContextCollection.get(contextID).vbos.delete(vboID);
 	}
 	
 	// Delete all vertex buffers
 	public static clear(contextID: string)
 	{
-		ContextObject.get(contextID).vbos.clear();
+		ContextCollection.get(contextID).vbos.clear();
 	}
 }
