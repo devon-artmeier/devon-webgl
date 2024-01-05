@@ -14,7 +14,18 @@ export class WebGLMath
 	{
 		return angle * (180 / Math.PI);
 	}
-
+	
+	// Generate blank matrix
+	public static blankMatrix()
+	{
+		return new Matrix([
+			[1, 0, 0, 0],
+			[0, 1, 0, 0],
+			[0, 0, 1, 0],
+			[0, 0, 0, 1]
+		]);
+	}
+	
 	// Generate orthographic projection matrix 
 	public static orthoMatrix(l: number, r: number, t: number, b: number, n: number, f: number): Matrix
 	{

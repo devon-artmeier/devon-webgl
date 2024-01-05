@@ -27,7 +27,7 @@ export class Context extends Resource
 	{
 		super(null, id, manager);
 		this._gl = this._canvas.getContext("webgl2",
-			{ alpha: true, stencil: true });
+			{ alpha: true, stencil: true, preserveDrawingBuffer: true });
 	}
 
 	// Delete
@@ -85,6 +85,7 @@ export class Context extends Resource
 		let gl = ContextCollection.get(id)?.gl;
 		if (gl != null) {
 			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
 	}
 	
@@ -97,7 +98,7 @@ export class Context extends Resource
 		}
 	}
 
-	// Enable
+	// Enable depth
 	public static enableDepth(id: string)
 	{
 		let gl = ContextCollection.get(id)?.gl;
@@ -106,7 +107,7 @@ export class Context extends Resource
 		}
 	}
 
-	// Disable
+	// Disable depth
 	public static disableDepth(id: string)
 	{
 		let gl = ContextCollection.get(id)?.gl;
@@ -184,6 +185,34 @@ export class Context extends Resource
 	{
 		let gl = ContextCollection.get(id)?.gl;
 		gl?.stencilMask(mask); 
+	}
+	
+	// Enable scissor test
+	public static enableScissor(id: string)
+	{
+		let gl = ContextCollection.get(id)?.gl;
+		if (gl != null) {
+			gl.enable(gl.SCISSOR_TEST);
+		}
+	}
+
+	// Disable scissor test
+	public static disableScissor(id: string)
+	{
+		let gl = ContextCollection.get(id)?.gl;
+		if (gl != null) {
+			gl.disable(gl.SCISSOR_TEST);
+		}
+	}
+
+	// Set scissor test region
+	public static setScissor(id: string, x: number, y: number, width: number, height: number)
+	{
+		let gl = ContextCollection.get(id)?.gl;
+		if (gl != null) {
+			let viewport = this.getViewport(id);
+			gl.scissor(x, viewport[3] - height - y, width, height);
+		}
 	}
 	
 	// Delete context
