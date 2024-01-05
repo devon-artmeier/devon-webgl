@@ -1,6 +1,6 @@
-import { Resource } from "../resources/resource";
+import { Resource } from "../private/resource";
 import { Context } from "./context";
-import { ContextCollection } from "../resources/context-collection";
+import { ContextCollection } from "../private/context-collection";
 import { VertexBuffer } from "./vertex-buffer";
 import { ElementBuffer } from "./element-buffer";
 

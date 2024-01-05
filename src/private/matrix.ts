@@ -1,5 +1,3 @@
-import { Vector4 } from "./vector";
-
 export class Matrix
 {
 	// Constructor

@@ -1,8 +1,8 @@
-import { Resource } from "../resources/resource";
-import { Context } from "./context";
-import { ContextCollection } from "../resources/context-collection";
-import { VertexBuffer } from "./vertex-buffer";
 import { BufferUsage } from "../types/enums";
+import { Resource } from "../private/resource";
+import { Context } from "./context";
+import { ContextCollection } from "../private/context-collection";
+import { VertexBuffer } from "./vertex-buffer";
 
 export class ElementBuffer extends Resource
 {

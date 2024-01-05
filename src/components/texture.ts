@@ -1,8 +1,8 @@
-import { Resource } from "../resources/resource";
-import { Context } from "./context";
-import { ContextCollection } from "../resources/context-collection";
-import { TextureFilter, TextureWrap } from "../types/enums";
 import { Color } from "../types/color";
+import { TextureFilter, TextureWrap } from "../types/enums";
+import { Resource } from "../private/resource";
+import { Context } from "./context";
+import { ContextCollection } from "../private/context-collection";
 
 export class Texture extends Resource
 {

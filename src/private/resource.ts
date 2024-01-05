@@ -1,4 +1,4 @@
-import { Context } from "../functions/context";
+import { Context } from "../components/context";
 
 // Resource interface
 export class Resource

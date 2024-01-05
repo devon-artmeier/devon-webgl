@@ -1,5 +1,5 @@
-import { Matrix } from "../types/matrix";
-import { Vector3 } from "../types/vector";
+import { Matrix } from "../private/matrix";
+import { Vector3 } from "../private/vector";
 
 export class WebGLMath
 {
@@ -37,8 +37,13 @@ export class WebGLMath
 	}
 
 	// Generate "look at" view matrix
-	public static lookAtMatrix(eye: Vector3, at: Vector3, up: Vector3)
+	public static lookAtMatrix(eyeX: number, eyeY: number, eyeZ: number,
+		atX: number, atY: number, atZ: number, upX: number, upY: number, upZ: number)
 	{
+		let eye = new Vector3([eyeX, eyeY, eyeZ]);
+		let at = new Vector3([atX, atY, atZ]);
+		let up = new Vector3([upX, upY, upZ]);
+
 		let z = eye.subtractVector(at).normalize();
 		let x = up.cross(z).normalize();
 		let	y = z.cross(x);

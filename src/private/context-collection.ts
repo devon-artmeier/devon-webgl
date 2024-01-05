@@ -1,5 +1,5 @@
 import { ResourceManager } from "./resource-manager";
-import { Context } from "../functions/context";
+import { Context } from "../components/context";
 
 export class ContextCollection
 {

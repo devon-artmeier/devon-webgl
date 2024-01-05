@@ -1,8 +1,8 @@
 import { Color } from "../types/color";
 import { Condition, StencilOption } from "../types/enums";
-import { ContextCollection } from "../resources/context-collection";
-import { Resource } from "../resources/resource";
-import { ResourceManager } from "../resources/resource-manager";
+import { Resource } from "../private/resource";
+import { ResourceManager } from "../private/resource-manager";
+import { ContextCollection } from "../private/context-collection";
 
 export class Context extends Resource
 {
