@@ -1,7 +1,4 @@
-import { TextureFilter, TextureWrap, BufferUsage, Condition, StencilOption } from "./types/enums";
-import { Color } from "./types/color";
-
-import * as DevonWebGL from "./components"
+import * as DGL from "./public"
 
 // Vertex shader code
 const vertexShaderCode =
@@ -166,135 +163,135 @@ const elementsSquare = new Uint16Array([
 
 function createContext(contextName: string, canvasID: string, fragCode: string, fragCode2: string)
 {
-	DevonWebGL.Context.create(contextName, document.getElementById(canvasID) as HTMLCanvasElement);
+	DGL.Context.create(contextName, document.getElementById(canvasID) as HTMLCanvasElement);
 
-	DevonWebGL.Texture.create(contextName, "texture_test");
-	DevonWebGL.Texture.setFilter(contextName, "texture_test", TextureFilter.Bilinear);
-	DevonWebGL.Texture.setWrap(contextName, "texture_test", TextureWrap.Clamp, TextureWrap.Clamp);
-	DevonWebGL.Texture.loadImage(contextName, "texture_test", "./img/test.png");
+	DGL.Texture.create(contextName, "texture_test");
+	DGL.Texture.setFilter(contextName, "texture_test", DGL.TextureFilter.Bilinear);
+	DGL.Texture.setWrap(contextName, "texture_test",  DGL.TextureWrap.Clamp, DGL.TextureWrap.Clamp);
+	DGL.Texture.loadImage(contextName, "texture_test", "./img/test.png");
 
-	DevonWebGL.Shader.create(contextName, "shader_main", vertexShaderCode, fragCode);
-	DevonWebGL.Shader.create(contextName, "shader_main2", vertexShaderCode, fragCode2);
-	DevonWebGL.Shader.create(contextName, "shader_main3", vertexShaderCode, fragShaderCode);
-	DevonWebGL.VertexBuffer.create(contextName, "vbo_cube", 24, [3, 2], BufferUsage.Static);
-	DevonWebGL.VertexBuffer.setData(contextName, "vbo_cube", cubeVertices, 0);
-	DevonWebGL.VertexBuffer.bufferData(contextName, "vbo_cube");
+	DGL.Shader.create(contextName, "shader_main", vertexShaderCode, fragCode);
+	DGL.Shader.create(contextName, "shader_main2", vertexShaderCode, fragCode2);
+	DGL.Shader.create(contextName, "shader_main3", vertexShaderCode, fragShaderCode);
+	DGL.VertexBuffer.create(contextName, "vbo_cube", 24, [3, 2], DGL.BufferUsage.Static);
+	DGL.VertexBuffer.setData(contextName, "vbo_cube", cubeVertices, 0);
+	DGL.VertexBuffer.bufferData(contextName, "vbo_cube");
 
-	DevonWebGL.ElementBuffer.create(contextName, "ebo_cube", 36, BufferUsage.Static);
-	DevonWebGL.ElementBuffer.setData(contextName, "ebo_cube", elementsCube, 0);
-	DevonWebGL.ElementBuffer.bufferData(contextName, "ebo_cube");
-	DevonWebGL.VertexBuffer.create(contextName, "vbo_square", 4, [3, 2], BufferUsage.Static);
-	DevonWebGL.VertexBuffer.setData(contextName, "vbo_square", squareVertices, 0);
-	DevonWebGL.VertexBuffer.bufferData(contextName, "vbo_square");
+	DGL.ElementBuffer.create(contextName, "ebo_cube", 36, DGL.BufferUsage.Static);
+	DGL.ElementBuffer.setData(contextName, "ebo_cube", elementsCube, 0);
+	DGL.ElementBuffer.bufferData(contextName, "ebo_cube");
+	DGL.VertexBuffer.create(contextName, "vbo_square", 4, [3, 2], DGL.BufferUsage.Static);
+	DGL.VertexBuffer.setData(contextName, "vbo_square", squareVertices, 0);
+	DGL.VertexBuffer.bufferData(contextName, "vbo_square");
 
-	DevonWebGL.ElementBuffer.create(contextName, "ebo_square", 6, BufferUsage.Static);
-	DevonWebGL.ElementBuffer.setData(contextName, "ebo_square", elementsSquare, 0);
-	DevonWebGL.ElementBuffer.bufferData(contextName, "ebo_square");
+	DGL.ElementBuffer.create(contextName, "ebo_square", 6, DGL.BufferUsage.Static);
+	DGL.ElementBuffer.setData(contextName, "ebo_square", elementsSquare, 0);
+	DGL.ElementBuffer.bufferData(contextName, "ebo_square");
 
-	DevonWebGL.VertexArray.create(contextName, "vao_cube");
-	DevonWebGL.VertexArray.setBuffers(contextName, "vao_cube", "vbo_cube", "ebo_cube");
+	DGL.VertexArray.create(contextName, "vao_cube");
+	DGL.VertexArray.setBuffers(contextName, "vao_cube", "vbo_cube", "ebo_cube");
 
-	DevonWebGL.VertexArray.create(contextName, "vao_square");
-	DevonWebGL.VertexArray.setBuffers(contextName, "vao_square", "vbo_square", "ebo_square");
+	DGL.VertexArray.create(contextName, "vao_square");
+	DGL.VertexArray.setBuffers(contextName, "vao_square", "vbo_square", "ebo_square");
 
-	DevonWebGL.Framebuffer.create(contextName, "fbo", 256, 256);
+	DGL.Framebuffer.create(contextName, "fbo", 256, 256);
 
-	DevonWebGL.Context.enableDepth(contextName);
-	DevonWebGL.Context.enableStencil(contextName);
-	DevonWebGL.Context.setStencilOptions(contextName, StencilOption.Keep, StencilOption.Keep, StencilOption.Replace);
+	DGL.Context.enableDepth(contextName);
+	DGL.Context.enableStencil(contextName);
+	DGL.Context.setStencilOptions(contextName, DGL.StencilOption.Keep, DGL.StencilOption.Keep, DGL.StencilOption.Replace);
 }
 
 function renderContext(contextName: string, time: number, mult: number, mult2: number)
 {
 	///////////////////////////////////////////////////////////////
 	
-	DevonWebGL.Framebuffer.bind(contextName, "fbo");
-	DevonWebGL.Context.setViewport(contextName, 0, 0, 256, 256);
-	DevonWebGL.Context.clear(contextName, Color.FromRGBA(1, 0, 1, 1));
+	DGL.Framebuffer.bind(contextName, "fbo");
+	DGL.Context.setViewport(contextName, 0, 0, 256, 256);
+	DGL.Context.clear(contextName, DGL.Color.FromRGBA(1, 0, 1, 1));
 	
-	let ortho = DevonWebGL. WebGLMath.perspectiveMatrix(60, 256, 256, 0.1, 1000);
+	let ortho = DGL. WebGLMath.perspectiveMatrix(60, 256, 256, 0.1, 1000);
 
-	DevonWebGL.Context.setStencilFunction(contextName, Condition.Always, 1, 0xFF);
-	DevonWebGL.Context.setStencilMask(contextName, 0xFF);
+	DGL.Context.setStencilFunction(contextName, DGL.Condition.Always, 1, 0xFF);
+	DGL.Context.setStencilMask(contextName, 0xFF);
 
-	let model = DevonWebGL.WebGLMath.translateMatrix(0, 0, 0);
-	model = model.multiply(DevonWebGL.WebGLMath.rotateMatrix(
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult),
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult),
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult)));
+	let model = DGL.WebGLMath.translateMatrix(0, 0, 0);
+	model = model.multiply(DGL.WebGLMath.rotateMatrix(
+		DGL.WebGLMath.degToRad(time / 25 * mult),
+		DGL.WebGLMath.degToRad(time / 25 * mult),
+		DGL.WebGLMath.degToRad(time / 25 * mult)));
 	
-	let x = Math.cos(DevonWebGL.WebGLMath.degToRad(time / 4 * mult)) * 256;
-	let y = Math.sin(DevonWebGL.WebGLMath.degToRad(time / 4 * mult)) * 256;
-	let z = Math.sin(DevonWebGL.WebGLMath.degToRad((time / 8) * mult)) * mult2;
+	let x = Math.cos(DGL.WebGLMath.degToRad(time / 4 * mult)) * 256;
+	let y = Math.sin(DGL.WebGLMath.degToRad(time / 4 * mult)) * 256;
+	let z = Math.sin(DGL.WebGLMath.degToRad((time / 8) * mult)) * mult2;
 
-	let view = DevonWebGL.WebGLMath.lookAtMatrix(x,y,64+z, 0,0,0, 0,1,0);
+	let view = DGL.WebGLMath.lookAtMatrix(x,y,64+z, 0,0,0, 0,1,0);
 
-	DevonWebGL.Texture.setActive(contextName, 0);
-	DevonWebGL.Texture.bind(contextName, "texture_test");
+	DGL.Texture.setActive(contextName, 0);
+	DGL.Texture.bind(contextName, "texture_test");
 
-	DevonWebGL.Shader.setUniform1i(contextName, "shader_main", "txt", 0);
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "model", model.flat());
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "view", view.flat());
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "projection", ortho.flat());
+	DGL.Shader.setUniform1i(contextName, "shader_main", "txt", 0);
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "model", model.flat());
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "view", view.flat());
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "projection", ortho.flat());
 
-	DevonWebGL.Shader.bind(contextName, "shader_main");
-	DevonWebGL.Texture.setActive(contextName, 0);
-	DevonWebGL.Texture.bind(contextName, "texture_test");
-	DevonWebGL.VertexArray.draw(contextName, "vao_cube");
+	DGL.Shader.bind(contextName, "shader_main");
+	DGL.Texture.setActive(contextName, 0);
+	DGL.Texture.bind(contextName, "texture_test");
+	DGL.VertexArray.draw(contextName, "vao_cube");
 	
-	DevonWebGL.Framebuffer.unbind(contextName);
+	DGL.Framebuffer.unbind(contextName);
 	
 	///////////////////////////////////////////////////////////////
 
-	DevonWebGL.Context.setViewport(contextName, 0, 0, 640, 480);
-	DevonWebGL.Context.clear(contextName, Color.FromRGBA(1, 0, 1, 1));
+	DGL.Context.setViewport(contextName, 0, 0, 640, 480);
+	DGL.Context.clear(contextName, DGL.Color.FromRGBA(1, 0, 1, 1));
 	
-	ortho = DevonWebGL.WebGLMath.perspectiveMatrix(60, 640, 480, 0.1, 1000);
+	ortho = DGL.WebGLMath.perspectiveMatrix(60, 640, 480, 0.1, 1000);
 	
-	DevonWebGL.Context.setStencilFunction(contextName, Condition.Always, 1, 0xFF);
-	DevonWebGL.Context.setStencilMask(contextName, 0xFF)
+	DGL.Context.setStencilFunction(contextName, DGL.Condition.Always, 1, 0xFF);
+	DGL.Context.setStencilMask(contextName, 0xFF)
 
-	model = DevonWebGL.WebGLMath.translateMatrix(0, 0, 0);
-	model = model.multiply(DevonWebGL.WebGLMath.rotateMatrix(
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult),
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult),
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult)));
+	model = DGL.WebGLMath.translateMatrix(0, 0, 0);
+	model = model.multiply(DGL.WebGLMath.rotateMatrix(
+		DGL.WebGLMath.degToRad(time / 25 * mult),
+		DGL.WebGLMath.degToRad(time / 25 * mult),
+		DGL.WebGLMath.degToRad(time / 25 * mult)));
 
-	view = DevonWebGL.WebGLMath.lookAtMatrix(x,y,256+z, 0,0,0, 0,1,0);
+	view = DGL.WebGLMath.lookAtMatrix(x,y,256+z, 0,0,0, 0,1,0);
 	
-	DevonWebGL.Shader.setUniform1i(contextName, "shader_main3", "txt", 0);
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "model", model.flat());
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "view", view.flat());
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "projection", ortho.flat());;
+	DGL.Shader.setUniform1i(contextName, "shader_main3", "txt", 0);
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "model", model.flat());
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "view", view.flat());
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "projection", ortho.flat());;
 
-	DevonWebGL.Shader.bind(contextName, "shader_main3");
-	DevonWebGL.Texture.setActive(contextName, 0);
-	DevonWebGL.Framebuffer.bindTexture(contextName, "fbo");
-	DevonWebGL.VertexArray.draw(contextName, "vao_cube");
+	DGL.Shader.bind(contextName, "shader_main3");
+	DGL.Texture.setActive(contextName, 0);
+	DGL.Framebuffer.bindTexture(contextName, "fbo");
+	DGL.VertexArray.draw(contextName, "vao_cube");
 	
 	///////////////////////////////////////////////////////////////
 	
-	DevonWebGL.Context.setStencilFunction(contextName, Condition.NotEqual, 1, 0xFF);
-	DevonWebGL.Context.setStencilMask(contextName, 0x00);
-	DevonWebGL.Context.disableDepth(contextName);
+	DGL.Context.setStencilFunction(contextName, DGL.Condition.NotEqual, 1, 0xFF);
+	DGL.Context.setStencilMask(contextName, 0x00);
+	DGL.Context.disableDepth(contextName);
 	
-	model = DevonWebGL.WebGLMath.translateMatrix(0, 0, 0);
-	model = model.multiply(DevonWebGL.WebGLMath.rotateMatrix(
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult),
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult),
-		DevonWebGL.WebGLMath.degToRad(time / 25 * mult)));
-	model = model.multiply(DevonWebGL.WebGLMath.scaleMatrix(1.1, 1.1, 1.1));
+	model = DGL.WebGLMath.translateMatrix(0, 0, 0);
+	model = model.multiply(DGL.WebGLMath.rotateMatrix(
+		DGL.WebGLMath.degToRad(time / 25 * mult),
+		DGL.WebGLMath.degToRad(time / 25 * mult),
+		DGL.WebGLMath.degToRad(time / 25 * mult)));
+	model = model.multiply(DGL.WebGLMath.scaleMatrix(1.1, 1.1, 1.1));
 	
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "model", model.flat());
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "view", view.flat());
-	DevonWebGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "projection", ortho.flat());;
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "model", model.flat());
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "view", view.flat());
+	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "projection", ortho.flat());;
 
-	DevonWebGL.Shader.bind(contextName, "shader_main2");
-	DevonWebGL.VertexArray.draw(contextName, "vao_cube");
+	DGL.Shader.bind(contextName, "shader_main2");
+	DGL.VertexArray.draw(contextName, "vao_cube");
 	
-	DevonWebGL.Context.setStencilMask(contextName, 0xFF);
-	DevonWebGL.Context.setStencilFunction(contextName, Condition.Always, 1, 0xFF);
-	DevonWebGL.Context.enableDepth(contextName);
+	DGL.Context.setStencilMask(contextName, 0xFF);
+	DGL.Context.setStencilFunction(contextName, DGL.Condition.Always, 1, 0xFF);
+	DGL.Context.enableDepth(contextName);
 }
 
 function render(time: number)

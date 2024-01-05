@@ -1,4 +1,5 @@
 import { Resource } from "../private/resource";
+import { ResourceManager } from "../private/resource-manager"
 import { Context } from "./context";
 import { ContextCollection } from "../private/context-collection";
 import { VertexBuffer } from "./vertex-buffer";
@@ -9,38 +10,32 @@ export class VertexArray extends Resource
 	private _object: WebGLVertexArrayObject;
 	private _vbo: VertexBuffer;
 	private _ebo: ElementBuffer;
-	private _tempBind: boolean = false;
 	
 	/**************************/
 	/* CLASS OBJECT FUNCTIONS */
 	/**************************/
 	
 	// Constructor
-	constructor(context: Context, id: string)
+	constructor(context: Context, id: string, manager: ResourceManager)
 	{
-		super(context, id);
+		super(context, id, manager);
 		let gl = this._context.gl;
 
 		this._object = gl.createVertexArray();
 	}
 	
-	// Temporary bind
-	private tempBind()
+	// Bind
+	public bind()
 	{
-		if (this._context.vaos.bind?.id != this.id) {
-			let gl = this._context.gl;
-			gl.bindVertexArray(this._object);
-			this._tempBind = true;
-		}
+		let gl = this._context.gl;
+		gl.bindVertexArray(this._object);
 	}
 	
-	// Unbind temporary bind
-	private tempUnbind()
+	// Unbind
+	public unbind()
 	{
-		if (this._tempBind) {
-			VertexArray.rebind(this._context.id);
-			this._tempBind = false;
-		}
+		let gl = this._context.gl;
+		gl.bindVertexArray(null);
 	}
 	
 	// Set vertex buffer object
@@ -100,9 +95,7 @@ export class VertexArray extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		if (this._context.vaos.bind == this) {
-			VertexArray.unbind(this._context.id);
-		}
+		this._manager.unbind(this);
 		gl.deleteVertexArray(this._object);
 	}
 	
@@ -121,41 +114,28 @@ export class VertexArray extends Resource
 	{
 		let context = ContextCollection.get(contextID);
 		if (context != null) {
-			let vao = new VertexArray(context, vaoID);
-			ContextCollection.get(contextID).vaos.add(vaoID, vao);
+			let manager = context.vaos;
+			let vao = new VertexArray(context, vaoID, manager);
+			manager.add(vaoID, vao);
 		}
 	}
 
 	// Bind
 	public static bind(contextID: string, vaoID: string)
 	{
-		let gl = ContextCollection.get(contextID)?.gl;
-		let vao = this.getVAO(contextID, vaoID);
-		if (gl != null && vao != null) {
-			if (ContextCollection.get(contextID).vaos.bind != vao) {
-				gl.bindVertexArray(vao._object);
-				ContextCollection.get(contextID).vaos.bind = vao;
-			}
+		let context = ContextCollection.get(contextID);
+		if (context != null) {
+			let manager = context.vaos;
+			manager.bind(manager.get(vaoID));
 		}
 	}
 	
 	// Unbind
 	public static unbind(contextID: string)
 	{
-		let gl = ContextCollection.get(contextID)?.gl;
-		if (gl != null && ContextCollection.get(contextID).vaos.bind != null) {
-			gl.useProgram(null);
-			ContextCollection.get(contextID).vaos.bind = null;
-		}
-	}
-	
-	// Rebind
-	private static rebind(contextID: string)
-	{
-		let gl = ContextCollection.get(contextID).gl;
-		let vao = ContextCollection.get(contextID)?.vaos.bind as VertexArray;
-		if (gl != null && vao != null) {
-			gl.bindVertexArray(vao._object);
+		let context = ContextCollection.get(contextID);
+		if (context != null) {
+			context.vaos.unbindCurrent();
 		}
 	}
 

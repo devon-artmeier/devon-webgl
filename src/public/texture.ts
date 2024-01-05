@@ -1,18 +1,18 @@
-import { Color } from "../types/color";
-import { TextureFilter, TextureWrap } from "../types/enums";
+import { Color } from "./color";
+import { TextureFilter, TextureWrap } from "./enums";
 import { Resource } from "../private/resource";
+import { ResourceManager } from "../private/resource-manager"
 import { Context } from "./context";
 import { ContextCollection } from "../private/context-collection";
 
 export class Texture extends Resource
 {
-	private _texture: WebGLTexture;
-	private _width: number = 1;
-	private _height: number = 1;
-	private _filter: TextureFilter = TextureFilter.Bilinear;
-	private _wrapX: TextureWrap = TextureWrap.Repeat;
-	private _wrapY: TextureWrap = TextureWrap.Repeat;
-	private _tempBind: boolean = false;
+	protected _texture: WebGLTexture;
+	protected _width: number = 1;
+	protected _height: number = 1;
+	protected _filter: TextureFilter = TextureFilter.Bilinear;
+	protected _wrapX: TextureWrap = TextureWrap.Repeat;
+	protected _wrapY: TextureWrap = TextureWrap.Repeat;
 	
 	get width(): number { return this._width; }
 	get height(): number { return this._height; }
@@ -25,9 +25,9 @@ export class Texture extends Resource
 	/**************************/
 	
 	// Constructor
-	private constructor(context: Context, id: string)
+	protected constructor(context: Context, id: string, manager: ResourceManager)
 	{
-		super(context, id);
+		super(context, id, manager);
 		let gl = this._context.gl;
 
 		this._texture = gl.createTexture();
@@ -40,23 +40,18 @@ export class Texture extends Resource
 		this.tempUnbind();
 	}
 	
-	// Temporary bind
-	public tempBind()
+	// Bind
+	public bind()
 	{
-		if (this._context.textures.bind?.id != this.id) {
-			let gl = this._context.gl;
-			gl.bindTexture(gl.TEXTURE_2D, this._texture);
-			this._tempBind = true;
-		}
+		let gl = this._context.gl;
+		gl.bindTexture(gl.TEXTURE_2D, this._texture);
 	}
 	
-	// Unbind temporary bind
-	public tempUnbind()
+	// Unbind
+	public unbind()
 	{
-		if (this._tempBind) {
-			Texture.rebind(this._context.id);
-			this._tempBind = false;
-		}
+		let gl = this._context.gl;
+		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 	
 	// Set filter
@@ -162,9 +157,7 @@ export class Texture extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		if (this._context.textures.bind?.id == this.id) {
-			Texture.unbind(this._context.id);
-		}
+		this._manager.unbind(this);
 		gl.deleteTexture(this._texture);
 	}
 	
@@ -183,41 +176,28 @@ export class Texture extends Resource
 	{
 		let context = ContextCollection.get(contextID);
 		if (context != null) {
-			let texture = new Texture(context, textureID);
-			ContextCollection.get(contextID).textures.add(textureID, texture);
+			let manager = context.textures;
+			let texture = new Texture(context, textureID, manager);
+			manager.add(textureID, texture);
 		}
 	}
 	
 	// Bind
 	public static bind(contextID: string, textureID: string)
 	{
-		let gl = ContextCollection.get(contextID)?.gl;
-		let texture = this.getTexture(contextID, textureID);
-		if (gl != null) {
-			if (ContextCollection.get(contextID).textures.bind != texture) {
-				gl.bindTexture(gl.TEXTURE_2D, texture._texture);
-				ContextCollection.get(contextID).textures.bind = texture;
-			}
+		let context = ContextCollection.get(contextID);
+		if (context != null) {
+			let manager = context.textures;
+			manager.bind(manager.get(textureID));
 		}
 	}
 	
 	// Unbind
 	public static unbind(contextID: string)
 	{
-		let gl = ContextCollection.get(contextID)?.gl;
-		if (gl != null && ContextCollection.get(contextID).textures.bind != null) {
-			gl.bindTexture(gl.TEXTURE_2D, null);
-			ContextCollection.get(contextID).textures.bind = null;
-		}
-	}
-	
-	// Rebind
-	public static rebind(contextID: string)
-	{
-		let gl = ContextCollection.get(contextID).gl;
-		let texture = this.getTexture(contextID, ContextCollection.get(contextID).textures.bind?.id);
-		if (gl != null && texture != null) {
-			gl.bindTexture(gl.TEXTURE_2D, texture._texture);
+		let context = ContextCollection.get(contextID);
+		if (context != null) {
+			context.textures.unbindCurrent();
 		}
 	}
 	

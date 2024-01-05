@@ -1,5 +1,6 @@
-import { BufferUsage } from "../types/enums";
+import { BufferUsage } from "./enums";
 import { Resource } from "../private/resource";
+import { ResourceManager } from "../private/resource-manager"
 import { Context } from "./context";
 import { ContextCollection } from "../private/context-collection";
 
@@ -10,7 +11,6 @@ export class VertexBuffer extends Resource
 	private _stride: number;
 	private _attribOffsets: number[] = Array(0);
 	private _created: boolean = false;
-	private _tempBind: boolean = false;
 	
 	get data(): Float32Array { return this._data; }
 	get vertexCount(): number { return this._vertexCount; }
@@ -25,10 +25,10 @@ export class VertexBuffer extends Resource
 	/**************************/
 	
 	// Constructor
-	constructor(context: Context, id: string, private _vertexCount: number,
+	constructor(context: Context, id: string, manager: ResourceManager, private _vertexCount: number,
 		private _attribLengths: number[], private _usage: BufferUsage)
 	{
-		super(context, id);
+		super(context, id, manager);
 		let gl = this._context.gl;
 		
 		this._buffer = gl.createBuffer();
@@ -43,23 +43,18 @@ export class VertexBuffer extends Resource
 
 	}
 	
-	// Temporary bind
-	public tempBind()
+	// Bind
+	public bind()
 	{
-		if (this._context.vbos.bind?.id != this.id) {
-			let gl = this._context.gl;
-			gl.bindBuffer(gl.ARRAY_BUFFER, this._buffer);
-			this._tempBind = true;
-		}
+		let gl = this._context.gl;
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._buffer);
 	}
 	
-	// Unbind temporary bind
-	public tempUnbind()
+	// Unbind
+	public unbind()
 	{
-		if (this._tempBind) {
-			VertexBuffer.rebind(this._context.id);
-			this._tempBind = false;
-		}
+		let gl = this._context.gl;
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 	}
 	
 	// Set up attributes
@@ -112,9 +107,7 @@ export class VertexBuffer extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		if (this._context.vbos.bind == this) {
-			VertexBuffer.unbind(this._context.id);
-		}
+		this._manager.unbind(this);
 		gl.deleteBuffer(this._buffer);
 	}
 	
@@ -134,41 +127,28 @@ export class VertexBuffer extends Resource
 	{
 		let context = ContextCollection.get(contextID);
 		if (context != null) {
-			let vbo = new VertexBuffer(context, vboID, vertexCount, attribLengths, usage);
-			ContextCollection.get(contextID)?.vbos.add(vboID, vbo);
+			let manager = context.vbos;
+			let vbo = new VertexBuffer(context, vboID, manager, vertexCount, attribLengths, usage);
+			manager.add(vboID, vbo);
 		}
 	}
 
 	// Bind
 	public static bind(contextID: string, vboID: string)
 	{
-		let gl = ContextCollection.get(contextID)?.gl;
-		let vbo = this.getVBO(contextID, vboID);
-		if (gl != null && vbo != null) {
-			if (ContextCollection.get(contextID).ebos.bind != vbo) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, vbo._buffer);
-				ContextCollection.get(contextID).vbos.bind = vbo;
-			}
+		let context = ContextCollection.get(contextID);
+		if (context != null) {
+			let manager = context.vbos;
+			manager.bind(manager.get(vboID));
 		}
 	}
 	
 	// Unbind
 	public static unbind(contextID: string)
 	{
-		let gl = ContextCollection.get(contextID)?.gl;
-		if (gl != null && ContextCollection.get(contextID).vbos.bind != null) {
-			gl.useProgram(null);
-			ContextCollection.get(contextID).vbos.bind = null;
-		}
-	}
-	
-	// Rebind
-	private static rebind(contextID: string)
-	{
-		let gl = ContextCollection.get(contextID).gl;
-		let vbo = ContextCollection.get(contextID)?.vbos.bind as VertexBuffer;
-		if (gl != null && vbo != null) {
-			gl.bindBuffer(gl.ARRAY_BUFFER, vbo._buffer);
+		let context = ContextCollection.get(contextID);
+		if (context != null) {
+			context.vbos.unbindCurrent();
 		}
 	}
 	

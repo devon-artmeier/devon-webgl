@@ -1,5 +1,7 @@
+export * from "./color"
 export * from "./context"
 export * from "./element-buffer";
+export * from "./enums";
 export * from "./framebuffer";
 export * from "./math"
 export * from "./shader"
