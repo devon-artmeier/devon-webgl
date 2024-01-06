@@ -197,7 +197,7 @@ function renderContext(contextName: string, time: number)
 	DGL.Shader.setUniformMatrix4fv("shader_main", "projection", perspective);
 
 	DGL.Shader.bind("shader_main");
-	DGL.Texture.setActive("texture_test", 0);
+	DGL.Texture.setActive(0, "texture_test");
 	DGL.Mesh.draw("mesh_cube");
 	
 	DGL.Framebuffer.unbind();
@@ -224,7 +224,7 @@ function renderContext(contextName: string, time: number)
 	DGL.Shader.setUniform1f("shader_main3", "time", time);
 
 	DGL.Shader.bind("shader_main3");
-	DGL.Framebuffer.setActiveTexture("fbo", 0);
+	DGL.Framebuffer.setActiveTexture(0, "fbo");
 	DGL.Mesh.draw("mesh_cube");
 	
 	///////////////////////////////////////////////////////////////

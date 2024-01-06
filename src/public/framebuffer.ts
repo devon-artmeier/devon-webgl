@@ -32,7 +32,7 @@ export class Framebuffer extends Resource
 		this._texture = gl.createTexture();
 		this._depth = gl.createTexture();
 
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		this.bindTexture();
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
@@ -49,6 +49,7 @@ export class Framebuffer extends Resource
 			gl.TEXTURE_2D, this._texture, 0);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT,
 			gl.TEXTURE_2D, this._depth, 0);
+			
 		this._context.fbos.currentBind?.bind();
 	}
 	
@@ -65,15 +66,18 @@ export class Framebuffer extends Resource
 	// Bind texture
 	public bindTexture()
 	{
-		let gl = this._context.gl;
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		if (this._context.textures.currentBind != this) {
+			let gl = this._context.gl;
+			gl.bindTexture(gl.TEXTURE_2D, this._texture);
+			this._context.textures.currentBind = this;
+		}
 	}
 	
 	// Set filter
 	public setFilter(filter: TextureFilter)
 	{
 		let gl = this._context.gl;
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		this.bindTexture();
 		this._filter = filter;
 
 		if (this._filter == TextureFilter.Bilinear) {
@@ -96,7 +100,7 @@ export class Framebuffer extends Resource
 	public setWrapX(mode: TextureWrap)
 	{
 		let gl = this._context.gl;
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		this.bindTexture();
 
 		this._wrapX = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(mode));
@@ -106,7 +110,7 @@ export class Framebuffer extends Resource
 	public setWrapY(mode: TextureWrap)
 	{
 		let gl = this._context.gl;
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		this.bindTexture();
 
 		this._wrapY = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(mode));
@@ -116,7 +120,7 @@ export class Framebuffer extends Resource
 	public setWrap(modeX: TextureWrap, modeY: TextureWrap)
 	{
 		let gl = this._context.gl;
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		this.bindTexture();
 
 		this._wrapX = modeX;
 		this._wrapY = modeY;
@@ -128,7 +132,7 @@ export class Framebuffer extends Resource
 	public resize(width: number, height: number)
 	{
 		let gl = this._context.gl;
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		this.bindTexture();
 
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0,
 			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4));
@@ -178,6 +182,7 @@ export class Framebuffer extends Resource
 		if (context != null) {
 			let gl = context.gl;
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			context.fbos.currentBind = null;
 		}
 	}
 	
@@ -236,7 +241,7 @@ export class Framebuffer extends Resource
 	}
 	
 	// Set active texture number
-	public static setActiveTexture(fboID: string, num: number)
+	public static setActiveTexture(num: number, fboID: string)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {

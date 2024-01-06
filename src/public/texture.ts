@@ -41,8 +41,11 @@ export class Texture extends Resource
 	// Bind
 	public bind()
 	{
-		let gl = this._context.gl;
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		if (this._context.textures.currentBind != this) {
+			let gl = this._context.gl;
+			gl.bindTexture(gl.TEXTURE_2D, this._texture);
+			this._context.textures.currentBind = this;
+		}
 	}
 	
 	// Set filter
@@ -122,11 +125,14 @@ export class Texture extends Resource
 		image.onload = () => {
 			if (this._texture != null) {
 				let gl = this._context.gl;
-				this.bind();
+				let curTexture = gl.getParameter(gl.TEXTURE_BINDING_2D) as WebGLTexture;
+				gl.bindTexture(gl.TEXTURE_2D, this._texture);
 
 				this._width = image.width;
 				this._height = image.height;
 				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+				
+				gl.bindTexture(gl.TEXTURE_2D, curTexture);
 			}
 		};
 	}
@@ -213,7 +219,7 @@ export class Texture extends Resource
 	}
 	
 	// Set active texture number
-	public static setActive(textureID: string, num: number)
+	public static setActive(num: number, textureID: string)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
