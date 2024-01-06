@@ -121,6 +121,11 @@ const elementsCube = new Uint16Array([
 	20, 21, 22, 21, 22, 23
 ]);
 
+function radians(angle: number): number
+{
+	return angle * (Math.PI / 180);
+}
+
 function createContext(contextName: string, canvasID: string)
 {
 	DGL.Context.create(contextName, document.getElementById(canvasID) as HTMLCanvasElement);
@@ -168,19 +173,19 @@ function renderContext(contextName: string, time: number)
 	DGL.Context.disableScissor();
 	DGL.Context.clear(DGL.Color.FromRGBA(1, 0, 1, 1));
 
-	let perspective = DGL. WebGLMath.perspective(60, 256, 256, 0.1, 1000);
+	let perspective = DGL. Matrix.perspective(60, 256, 256, 0.1, 1000);
 
 	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
 	DGL.Context.setStencilMask(0xFF);
 
-	let angle = DGL.WebGLMath.degToRad(time / 25);
-	let model = DGL.WebGLMath.model3D(0, 0, 0, angle, angle, angle, 1, 1, 1);
+	let angle = radians(time / 25);
+	let model = DGL.Matrix.model3D(0, 0, 0, angle, angle, angle, 1, 1, 1);
 	
-	let x = Math.cos(DGL.WebGLMath.degToRad(time / 4)) * 256;
-	let y = Math.sin(DGL.WebGLMath.degToRad(time / 4)) * 256;
-	let z = Math.sin(DGL.WebGLMath.degToRad((time / 8))) * 200;
+	let x = Math.cos(radians(time / 4)) * 256;
+	let y = Math.sin(radians(time / 4)) * 256;
+	let z = Math.sin(radians((time / 8))) * 200;
 
-	let view = DGL.WebGLMath.view3D(x, y, 64+z, 0, 0, 0, 0, 1, 0);
+	let view = DGL.Matrix.view3D(x, y, 64 + z, 0, 0, 0, 0, 1, 0);
 
 	DGL.Shader.setUniform1i("shader_main", "txt", 0);
 	DGL.Shader.setUniformMatrix4fv("shader_main", "model", model);
@@ -199,16 +204,16 @@ function renderContext(contextName: string, time: number)
 	DGL.Context.setViewport(0, 0, 640, 480);
 	DGL.Context.clear(DGL.Color.FromRGBA(0, 0, 0, 1));
 	
-	perspective = DGL.WebGLMath.perspective(60, 640, 480, 0.1, 1000);
+	perspective = DGL.Matrix.perspective(60, 640, 480, 0.1, 1000);
 	
 	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
 	DGL.Context.setStencilMask(0xFF)
 
-	angle = DGL.WebGLMath.degToRad(time / 25);
-	model = DGL.WebGLMath.model3D(0, 0, 0, angle, angle, angle, 1, 1, 1);
+	angle = radians(time / 25);
+	model = DGL.Matrix.model3D(0, 0, 0, angle, angle, angle, 1, 1, 1);
 
-	view = DGL.WebGLMath.view3D(x,y,256+z, 0,0,0, 0,1,0);
-	
+	view = DGL.Matrix.view3D(x, y, 256 + z, 0, 0, 0, 0, 1, 0);
+
 	DGL.Shader.setUniform1i("shader_main3", "txt", 0);
 	DGL.Shader.setUniformMatrix4fv("shader_main3", "model", model);
 	DGL.Shader.setUniformMatrix4fv("shader_main3", "view", view);
@@ -226,8 +231,8 @@ function renderContext(contextName: string, time: number)
 	DGL.Context.setStencilMask(0x00);
 	DGL.Context.disableDepth();
 
-	angle = DGL.WebGLMath.degToRad(time / 25);
-	model = DGL.WebGLMath.model3D(0, 0, 0, angle, angle, angle, 1.1, 1.1, 1.1);
+	angle = radians(time / 25);
+	model = DGL.Matrix.model3D(0, 0, 0, angle, angle, angle, 1.1, 1.1, 1.1);
 	
 	DGL.Shader.setUniformMatrix4fv("shader_main2", "model", model);
 	DGL.Shader.setUniformMatrix4fv("shader_main2", "view", view);

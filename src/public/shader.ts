@@ -65,7 +65,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 1D float array uniform attribute
-	public setUniform1fv(name: string, val: Float32Array)
+	public setUniform1fv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -83,7 +83,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 1D integer array uniform attribute
-	public setUniform1iv(name: string, val: Int32Array)
+	public setUniform1iv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -101,7 +101,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 2D float array uniform attribute
-	public setUniform2fv(name: string, val: Float32Array)
+	public setUniform2fv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -119,7 +119,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 2D integer array uniform attribute
-	public setUniform2iv(name: string, val: Int32Array)
+	public setUniform2iv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -137,7 +137,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 3D float array uniform attribute
-	public setUniform3fv(name: string, val: Float32Array)
+	public setUniform3fv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -155,7 +155,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 3D integer array uniform attribute
-	public setUniform3iv(name: string, val: Int32Array)
+	public setUniform3iv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -173,7 +173,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 4D float array uniform attribute
-	public setUniform4fv(name: string, val: Float32Array)
+	public setUniform4fv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -191,7 +191,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 4D integer array uniform attribute
-	public setUniform4iv(name: string, val: Int32Array)
+	public setUniform4iv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -200,7 +200,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 2-component matrix uniform attribute
-	public setUniformMatrix2fv(name: string, val: Float32Array)
+	public setUniformMatrix2fv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -209,7 +209,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 3-component matrix uniform attribute
-	public setUniformMatrix3fv(name: string, val: Float32Array)
+	public setUniformMatrix3fv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -218,7 +218,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 4-component matrix uniform attribute
-	public setUniformMatrix4fv(name: string, val: Float32Array)
+	public setUniformMatrix4fv(name: string, val: number[])
 	{
 		let gl = this._context.gl;
 		this.tempBind();
@@ -288,7 +288,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 1D float array uniform attribute
-	public static setUniform1fv(shaderID: string, name: string, val: Float32Array)
+	public static setUniform1fv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform1fv(name, val);
 	}
@@ -300,7 +300,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 1D integer array uniform attribute
-	public static setUniform1iv(shaderID: string, name: string, val: Int32Array)
+	public static setUniform1iv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform1iv(name, val);
 	}
@@ -312,7 +312,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 2D float array uniform attribute
-	public static setUniform2fv(shaderID: string, name: string, val: Float32Array)
+	public static setUniform2fv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform2fv(name, val);
 	}
@@ -324,7 +324,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 2D integer array uniform attribute
-	public static setUniform2iv(shaderID: string, name: string, val: Int32Array)
+	public static setUniform2iv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform2iv(name, val);
 	}
@@ -337,7 +337,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 3D float array uniform attribute
-	public static setUniform3fv(shaderID: string, name: string, val: Float32Array)
+	public static setUniform3fv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform3fv(name, val);
 	}
@@ -350,7 +350,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 3D integer array uniform attribute
-	public static setUniform3iv(shaderID: string, name: string, val: Int32Array)
+	public static setUniform3iv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform3iv(name, val);
 	}
@@ -363,7 +363,7 @@ export class Shader extends Resource
 	}
 	
 	// Set 4D float array uniform attribute
-	public static setUniform4fv(shaderID: string, name: string, val: Float32Array)
+	public static setUniform4fv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform4fv(name, val);
 	}
@@ -376,25 +376,25 @@ export class Shader extends Resource
 	}
 	
 	// Set 4D integer array uniform attribute
-	public static setUniform4iv(shaderID: string, name: string, val: Int32Array)
+	public static setUniform4iv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniform4iv(name, val);
 	}
 	
 	// Set 2-component matrix uniform attribute
-	public static setUniformMatrix2fv(shaderID: string, name: string, val: Float32Array)
+	public static setUniformMatrix2fv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniformMatrix2fv(name, val);
 	}
 	
 	// Set 3-component matrix uniform attribute
-	public static setUniformMatrix3fv(shaderID: string, name: string, val: Float32Array)
+	public static setUniformMatrix3fv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniformMatrix3fv(name, val);
 	}
 	
 	// Set 4-component matrix uniform attribute
-	public static setUniformMatrix4fv(shaderID: string, name: string, val: Float32Array)
+	public static setUniformMatrix4fv(shaderID: string, name: string, val: number[])
 	{
 		this.getShader(shaderID)?.setUniformMatrix4fv(name, val);
 	}
