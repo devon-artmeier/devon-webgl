@@ -6,8 +6,7 @@ import { ContextCollection } from "../private/context-collection";
 
 export class Context extends Resource
 {
-	private readonly _gl: WebGL2RenderingContext;
-	
+	public readonly gl: WebGL2RenderingContext;
 	public readonly textures = new ResourceManager();
 	public readonly shaders = new ResourceManager();
 	public readonly vbos = new ResourceManager();
@@ -15,7 +14,6 @@ export class Context extends Resource
 	public readonly vaos = new ResourceManager();
 	public readonly fbos = new ResourceManager();
 	
-	get gl(): WebGL2RenderingContext { return this._gl; }
 	get canvas(): HTMLCanvasElement { return this._canvas; }
 	
 	/**************************/
@@ -26,7 +24,8 @@ export class Context extends Resource
 	constructor(private _canvas: HTMLCanvasElement, id: string, manager: ResourceManager)
 	{
 		super(null, id, manager);
-		this._gl = this._canvas.getContext("webgl2",
+
+		this.gl = this._canvas?.getContext("webgl2",
 			{ alpha: true, stencil: true, preserveDrawingBuffer: true });
 	}
 
@@ -48,79 +47,98 @@ export class Context extends Resource
 	// Create context
 	public static create(id: string, canvas: HTMLCanvasElement)
 	{
-		let manager = ContextCollection._contexts;
-		manager.add(id, new Context(canvas, id, manager));
+		let manager = ContextCollection.contexts;
+		let context = new Context(canvas, id, manager);
+		if (context.gl != null) {
+			manager.add(id, new Context(canvas, id, manager));
+		}
+	}
+
+	// Bind
+	public static bind(id: string)
+	{
+		ContextCollection.bind(id);
 	}
 	
 	// Clear
-	public static clear(id: string, color: Color)
+	public static clear(color: Color)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.clearColor(color.r, color.g, color.b, color.a);
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 		}
 	}
 
 	// Set viewport
-	public static setViewport(id: string, x: number, y: number, width: number, height: number)
+	public static setViewport(x: number, y: number, width: number, height: number)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		gl?.viewport(x, y, width, height);
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
+			gl.viewport(x, y, width, height);
+		}
 	}
 
 	// Get viewport
-	public static getViewport(id: string): number[]
+	public static getViewport(): number[]
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			return gl.getParameter(gl.VIEWPORT);
 		}
 		return [0, 0, 0, 0];
 	}
 	
 	// Enable blending
-	public static enableBlend(id: string)
+	public static enableBlend()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		}
 	}
 	
 	// Disable blending
-	public static disableBlend(id: string)
+	public static disableBlend()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.disable(gl.BLEND);
 		}
 	}
 
 	// Enable depth
-	public static enableDepth(id: string)
+	public static enableDepth()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.enable(gl.DEPTH_TEST);
 		}
 	}
 
 	// Disable depth
-	public static disableDepth(id: string)
+	public static disableDepth()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.disable(gl.DEPTH_TEST);
 		}
 	}
 
 	// Set depth function
-	public static setDepthFunction(id: string, func: Condition)
+	public static setDepthFunction(func: Condition)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.depthFunc([
 				gl.ALWAYS, gl.NEVER, gl.EQUAL, gl.NOTEQUAL,
 				gl.LESS, gl.LEQUAL, gl.GREATER, gl.GEQUAL
@@ -129,49 +147,54 @@ export class Context extends Resource
 	}
 
 	// Set depth mask
-	public static setDepthMask(id: string, enable: boolean)
+	public static setDepthMask(enable: boolean)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.depthMask(enable);
 		}
 	}
 
 	// Enable stencil testing
-	public static enableStencil(id: string)
+	public static enableStencil()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.enable(gl.STENCIL_TEST);
 		}
 	}
 	
 	// Disable stencil testing
-	public static disableStencil(id: string)
+	public static disableStencil()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.disable(gl.STENCIL_TEST);
 		}
 	}
 
 	// Set stencil function
-	public static setStencilFunction(id: string, func: Condition, ref: number, mask: number)
+	public static setStencilFunction(func: Condition, ref: number, mask: number)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.stencilFunc([
 				gl.ALWAYS, gl.NEVER, gl.EQUAL, gl.NOTEQUAL,
 				gl.LESS, gl.LEQUAL, gl.GREATER, gl.GEQUAL
 			][func], ref, mask);
-		}
+	}
 	}
 
 	// Set stencil options
-	public static setStencilOptions(id: string, sfail: StencilOption, dpfail: StencilOption, dppass: StencilOption)
+	public static setStencilOptions(sfail: StencilOption, dpfail: StencilOption, dppass: StencilOption)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			let ops = [
 				gl.KEEP, gl.ZERO, gl.REPLACE, gl.INCR,
 				gl.INCR_WRAP, gl.DECR, gl.DECR_WRAP, gl.INVERT
@@ -181,36 +204,42 @@ export class Context extends Resource
 	}
 	
 	// Set stencil mask
-	public static setStencilMask(id: string, mask: number)
+	public static setStencilMask(mask: number)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		gl?.stencilMask(mask); 
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
+			gl.stencilMask(mask); 
+		}
 	}
 	
 	// Enable scissor test
-	public static enableScissor(id: string)
+	public static enableScissor()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.enable(gl.SCISSOR_TEST);
 		}
 	}
 
 	// Disable scissor test
-	public static disableScissor(id: string)
+	public static disableScissor()
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
 			gl.disable(gl.SCISSOR_TEST);
 		}
 	}
 
 	// Set scissor test region
-	public static setScissor(id: string, x: number, y: number, width: number, height: number)
+	public static setScissor(x: number, y: number, width: number, height: number)
 	{
-		let gl = ContextCollection.get(id)?.gl;
-		if (gl != null) {
-			let viewport = this.getViewport(id);
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
+			let viewport = this.getViewport();
 			gl.scissor(x, viewport[3] - height - y, width, height);
 		}
 	}
@@ -218,6 +247,6 @@ export class Context extends Resource
 	// Delete context
 	public static delete(id: string)
 	{
-		ContextCollection._contexts.delete(id);
+		ContextCollection.delete(id);
 	}
 }

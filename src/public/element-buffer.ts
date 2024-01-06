@@ -55,7 +55,7 @@ export class ElementBuffer extends Resource
 	{
 		let gl = this._context.gl;
 		this.tempBind();
-		
+
 		if (!this._created) {
 			// Create buffer data
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this._data,
@@ -65,7 +65,7 @@ export class ElementBuffer extends Resource
 			// Modify buffer data
 			gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, this._data);
 		}
-		
+
 		this.tempUnbind();
 	}
 	
@@ -87,7 +87,7 @@ export class ElementBuffer extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		this._manager.unbind(this);
+		this._manager.unbind(this.id);
 		gl.deleteBuffer(this._buffer);
 	}
 	
@@ -96,15 +96,15 @@ export class ElementBuffer extends Resource
 	/********************/
 	
 	// Get element buffer
-	private static getEBO(contextID: string, eboID: string): ElementBuffer
+	private static getEBO(eboID: string): ElementBuffer
 	{
-		return ContextCollection.get(contextID)?.ebos.get(eboID) as ElementBuffer;
+		return ContextCollection.getBind()?.ebos.get(eboID) as ElementBuffer;
 	}
 	
 	// Create
-	public static create(contextID: string, eboID: string, count: number, usage: BufferUsage)
+	public static create(eboID: string, count: number, usage: BufferUsage)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.ebos;
 			let ebo = new ElementBuffer(context, eboID, manager, count, usage);
@@ -113,73 +113,73 @@ export class ElementBuffer extends Resource
 	}
 
 	// Bind
-	public static bind(contextID: string, eboID: string)
+	public static bind(eboID: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.ebos;
-			manager.bind(manager.get(eboID));
+			manager.bind(eboID);
 		}
 	}
 	
 	// Unbind
-	public static unbind(contextID: string)
+	public static unbind()
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			context.ebos.unbindCurrent();
 		}
 	}
 	
 	// Get element count
-	public static getCount(contextID: string, eboID: string): number
+	public static getCount(eboID: string): number
 	{
-		return this.getEBO(contextID, eboID)?.count;
+		return this.getEBO(eboID)?.count;
 	}
 	
 	// Get usage
-	public static getUsage(contextID: string, eboID: string): BufferUsage
+	public static getUsage(eboID: string): BufferUsage
 	{
-		return this.getEBO(contextID, eboID)?.usage;
+		return this.getEBO(eboID)?.usage;
 	}
 	
 	// Get data
-	public static getData(contextID: string, eboID: string): Uint16Array
+	public static getData(eboID: string): Uint16Array
 	{
-		return this.getEBO(contextID, eboID)?.data;
+		return this.getEBO(eboID)?.data;
 	}
 	
 	// Set data
-	public static setData(contextID: string, eboID: string, data: Uint16Array, offset: number)
+	public static setData(eboID: string, data: Uint16Array, offset: number)
 	{
-		this.getEBO(contextID, eboID)?.setData(data, offset);
+		this.getEBO(eboID)?.setData(data, offset);
 	}
 	
 	// Buffer data
-	public static bufferData(contextID: string, eboID: string)
+	public static bufferData(eboID: string)
 	{
-		this.getEBO(contextID, eboID)?.bufferData();
+		this.getEBO(eboID)?.bufferData();
 	}
 	
 	// Draw with vertex buffer
-	public static draw(contextID: string, eboID: string, vboID: string)
+	public static draw(eboID: string, vboID: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let vbo = context.vbos.get(vboID) as VertexBuffer;
-			this.getEBO(contextID, eboID)?.draw(vbo);
+			this.getEBO(eboID)?.draw(vbo);
 		}
 	}
 	
 	// Delete
-	public static delete(contextID: string, eboID: string)
+	public static delete(eboID: string)
 	{
-		ContextCollection.get(contextID)?.ebos.delete(eboID);
+		ContextCollection.getBind()?.ebos.delete(eboID);
 	}
 	
 	// Delete all vertex buffers
-	public static clear(contextID: string)
+	public static clear()
 	{
-		ContextCollection.get(contextID)?.ebos.clear();
+		ContextCollection.getBind()?.ebos.clear();
 	}
 }

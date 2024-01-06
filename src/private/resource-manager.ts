@@ -48,8 +48,9 @@ export class ResourceManager
 	}
 	
 	// Bind
-	public bind(resource: Resource)
+	public bind(resourceID: string)
 	{
+		let resource = this._pool.get(resourceID);
 		if (resource != null && this._bind != resource) {
 			this._bind = resource;
 			resource.bind();
@@ -57,8 +58,9 @@ export class ResourceManager
 	}
 	
 	// Unbind resource
-	public unbind(resource: Resource)
+	public unbind(resourceID: string)
 	{
+		let resource = this._pool.get(resourceID);
 		if (resource != null && this._bind == resource) {
 			this._bind = null;
 			resource.unbind();
@@ -68,13 +70,22 @@ export class ResourceManager
 	// Unbind
 	public unbindCurrent()
 	{
-		this.unbind(this._bind)
+		if (this._bind != null) {
+			this._bind.unbind();
+			this._bind = null;
+		}
 	}
 	
 	// Check bind
 	public checkBind(resource: Resource)
 	{
 		return this._bind == resource;
+	}
+
+	// Check if bind is set
+	public checkBindSet()
+	{
+		return this._bind != null;
 	}
 	
 	// Rebind

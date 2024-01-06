@@ -21,16 +21,16 @@ export class Shader extends Resource
 		let vertexShader = gl.createShader(gl.VERTEX_SHADER);
 		gl.shaderSource(vertexShader, vertexCode);
 		gl.compileShader(vertexShader);
-	
+		
 		let fragShader = gl.createShader(gl.FRAGMENT_SHADER);
 		gl.shaderSource(fragShader, fragCode);
 		gl.compileShader(fragShader);
-	
+		
 		this._program = gl.createProgram();
 		gl.attachShader(this._program, vertexShader); 
 		gl.attachShader(this._program, fragShader);
 		gl.linkProgram(this._program);
-	
+		
 		gl.deleteShader(vertexShader);
 		gl.deleteShader(fragShader);
 	}
@@ -52,8 +52,7 @@ export class Shader extends Resource
 	// Get uniform attribute location
 	private getUniformLocation(name: string): WebGLUniformLocation
 	{
-		let gl = this._context.gl;
-		return gl.getUniformLocation(this._program, name);
+		return this._context.gl.getUniformLocation(this._program, name);
 	}
 	
 	// Set 1D float value uniform attribute
@@ -238,7 +237,7 @@ export class Shader extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		this._manager.unbind(this);
+		this._manager.unbind(this.id);
 		gl.deleteProgram(this._program);
 	}
 	
@@ -247,15 +246,15 @@ export class Shader extends Resource
 	/********************/
 	
 	// Get shader
-	private static getShader(contextID: string, shaderID: string): Shader
+	private static getShader(shaderID: string): Shader
 	{
-		return ContextCollection.get(contextID).shaders.get(shaderID) as Shader;
+		return ContextCollection.getBind()?.shaders.get(shaderID) as Shader;
 	}
 	
 	// Create
-	public static create(contextID: string, shaderID: string, vertexCode: string, fragCode: string)
+	public static create(shaderID: string, vertexCode: string, fragCode: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.shaders;
 			let shader = new Shader(context, shaderID, manager, vertexCode, fragCode);
@@ -264,157 +263,157 @@ export class Shader extends Resource
 	}
 
 	// Bind
-	public static bind(contextID: string, shaderID: string)
+	public static bind(shaderID: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.shaders;
-			manager.bind(manager.get(shaderID));
+			manager.bind(shaderID);
 		}
 	}
 	
 	// Unbind
-	public static unbind(contextID: string)
+	public static unbind()
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			context.shaders.unbindCurrent();
 		}
 	}
 	
 	// Set 1D float value uniform attribute
-	public static setUniform1f(contextID: string, shaderID: string, name: string, v0: number)
+	public static setUniform1f(shaderID: string, name: string, v0: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform1f(name, v0);
+		this.getShader(shaderID)?.setUniform1f(name, v0);
 	}
 	
 	// Set 1D float array uniform attribute
-	public static setUniform1fv(contextID: string, shaderID: string, name: string, val: Float32Array)
+	public static setUniform1fv(shaderID: string, name: string, val: Float32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform1fv(name, val);
+		this.getShader(shaderID)?.setUniform1fv(name, val);
 	}
 	
 	// Set 1D integer values uniform attribute
-	public static setUniform1i(contextID: string, shaderID: string, name: string, v0: number)
+	public static setUniform1i(shaderID: string, name: string, v0: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform1i(name, v0);
+		this.getShader(shaderID)?.setUniform1i(name, v0);
 	}
 	
 	// Set 1D integer array uniform attribute
-	public static setUniform1iv(contextID: string, shaderID: string, name: string, val: Int32Array)
+	public static setUniform1iv(shaderID: string, name: string, val: Int32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform1iv(name, val);
+		this.getShader(shaderID)?.setUniform1iv(name, val);
 	}
 	
 	// Set 2D float values uniform attribute
-	public static setUniform2f(contextID: string, shaderID: string, name: string, v0: number, v1: number)
+	public static setUniform2f(shaderID: string, name: string, v0: number, v1: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform2f(name, v0, v1);
+		this.getShader(shaderID)?.setUniform2f(name, v0, v1);
 	}
 	
 	// Set 2D float array uniform attribute
-	public static setUniform2fv(contextID: string, shaderID: string, name: string, val: Float32Array)
+	public static setUniform2fv(shaderID: string, name: string, val: Float32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform2fv(name, val);
+		this.getShader(shaderID)?.setUniform2fv(name, val);
 	}
 	
 	// Set 2D integer values uniform attribute
-	public static setUniform2i(contextID: string, shaderID: string, name: string, v0: number, v1: number)
+	public static setUniform2i(shaderID: string, name: string, v0: number, v1: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform2i(name, v0, v1);
+		this.getShader(shaderID)?.setUniform2i(name, v0, v1);
 	}
 	
 	// Set 2D integer array uniform attribute
-	public static setUniform2iv(contextID: string, shaderID: string, name: string, val: Int32Array)
+	public static setUniform2iv(shaderID: string, name: string, val: Int32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform2iv(name, val);
+		this.getShader(shaderID)?.setUniform2iv(name, val);
 	}
 	
 	// Set 3D float values uniform attribute
-	public static setUniform3f(contextID: string, shaderID: string, name: string,
+	public static setUniform3f(shaderID: string, name: string,
 		v0: number, v1: number, v2: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform3f(name, v0, v1, v2);
+		this.getShader(shaderID)?.setUniform3f(name, v0, v1, v2);
 	}
 	
 	// Set 3D float array uniform attribute
-	public static setUniform3fv(contextID: string, shaderID: string, name: string, val: Float32Array)
+	public static setUniform3fv(shaderID: string, name: string, val: Float32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform3fv(name, val);
+		this.getShader(shaderID)?.setUniform3fv(name, val);
 	}
 	
 	// Set 3D integer values uniform attribute
-	public static setUniform3i(contextID: string, shaderID: string, name: string,
+	public static setUniform3i(shaderID: string, name: string,
 		v0: number, v1: number, v2: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform3i(name, v0, v1, v2);
+		this.getShader(shaderID)?.setUniform3i(name, v0, v1, v2);
 	}
 	
 	// Set 3D integer array uniform attribute
-	public static setUniform3iv(contextID: string, shaderID: string, name: string, val: Int32Array)
+	public static setUniform3iv(shaderID: string, name: string, val: Int32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform3iv(name, val);
+		this.getShader(shaderID)?.setUniform3iv(name, val);
 	}
 	
 	// Set 4D float values uniform attribute
-	public static setUniform4f(contextID: string, shaderID: string, name: string,
+	public static setUniform4f(shaderID: string, name: string,
 		v0: number, v1: number, v2: number, v3: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform4f(name, v0, v1, v2, v3);
+		this.getShader(shaderID)?.setUniform4f(name, v0, v1, v2, v3);
 	}
 	
 	// Set 4D float array uniform attribute
-	public static setUniform4fv(contextID: string, shaderID: string, name: string, val: Float32Array)
+	public static setUniform4fv(shaderID: string, name: string, val: Float32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform4fv(name, val);
+		this.getShader(shaderID)?.setUniform4fv(name, val);
 	}
 	
 	// Set 4D integer values uniform attribute
-	public static setUniform4i(contextID: string, shaderID: string, name: string,
+	public static setUniform4i(shaderID: string, name: string,
 		v0: number, v1: number, v2: number, v3: number)
 	{
-		this.getShader(contextID, shaderID)?.setUniform4i(name, v0, v1, v2, v3);
+		this.getShader(shaderID)?.setUniform4i(name, v0, v1, v2, v3);
 	}
 	
 	// Set 4D integer array uniform attribute
-	public static setUniform4iv(contextID: string, shaderID: string, name: string, val: Int32Array)
+	public static setUniform4iv(shaderID: string, name: string, val: Int32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniform4iv(name, val);
+		this.getShader(shaderID)?.setUniform4iv(name, val);
 	}
 	
 	// Set 2-component matrix uniform attribute
-	public static setUniformMatrix2fv(contextID: string, shaderID: string, name: string, val: Float32Array)
+	public static setUniformMatrix2fv(shaderID: string, name: string, val: Float32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniformMatrix2fv(name, val);
+		this.getShader(shaderID)?.setUniformMatrix2fv(name, val);
 	}
 	
 	// Set 3-component matrix uniform attribute
-	public static setUniformMatrix3fv(contextID: string, shaderID: string, name: string, val: Float32Array)
+	public static setUniformMatrix3fv(shaderID: string, name: string, val: Float32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniformMatrix3fv(name, val);
+		this.getShader(shaderID)?.setUniformMatrix3fv(name, val);
 	}
 	
 	// Set 4-component matrix uniform attribute
-	public static setUniformMatrix4fv(contextID: string, shaderID: string, name: string, val: Float32Array)
+	public static setUniformMatrix4fv(shaderID: string, name: string, val: Float32Array)
 	{
-		this.getShader(contextID, shaderID)?.setUniformMatrix4fv(name, val);
+		this.getShader(shaderID)?.setUniformMatrix4fv(name, val);
 	}
 	
 	// Get uniform attribute
-	public static getShaderUniform(contextID: string, shaderID: string, name: string)
+	public static getShaderUniform(shaderID: string, name: string)
 	{
-		this.getShader(contextID, shaderID)?.getUniform(name);
+		this.getShader(shaderID)?.getUniform(name);
 	}
 	
 	// Delete
-	public static delete(contextID: string, shaderID: string)
+	public static delete(shaderID: string)
 	{
-		ContextCollection.get(contextID).shaders.delete(shaderID);
+		ContextCollection.getBind()?.shaders.delete(shaderID);
 	}
 	
 	// Delete all shaders
-	public static clear(contextID: string)
+	public static clear()
 	{
-		ContextCollection.get(contextID).shaders.clear();
+		ContextCollection.getBind()?.shaders.clear();
 	}
 }

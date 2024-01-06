@@ -20,7 +20,7 @@ export class VertexArray extends Resource
 	{
 		super(context, id, manager);
 		let gl = this._context.gl;
-
+		
 		this._object = gl.createVertexArray();
 	}
 	
@@ -82,20 +82,22 @@ export class VertexArray extends Resource
 	public draw()
 	{
 		let gl = this._context.gl;
-		this.tempBind();
-		if (this._ebo != null) {
-			gl.drawElements(gl.TRIANGLES, this._ebo.count, gl.UNSIGNED_SHORT, 0);
-		} else {
-			gl.drawArrays(gl.TRIANGLES, 0, this._vbo.vertexCount);
+		if (this._vbo != null) {
+			this.tempBind();
+			if (this._ebo != null) {
+				gl.drawElements(gl.TRIANGLES, this._ebo.count, gl.UNSIGNED_SHORT, 0);
+			} else  {
+				gl.drawArrays(gl.TRIANGLES, 0, this._vbo.vertexCount);
+			}
+			this.tempUnbind();
 		}
-		this.tempUnbind();
 	}
 	
 	// Delete
 	public delete()
 	{
 		let gl = this._context.gl;
-		this._manager.unbind(this);
+		this._manager.unbind(this.id);
 		gl.deleteVertexArray(this._object);
 	}
 	
@@ -104,15 +106,15 @@ export class VertexArray extends Resource
 	/********************/
 	
 	// Get vertex array
-	private static getVAO(contextID: string, vaoID: string): VertexArray
+	private static getVAO(vaoID: string): VertexArray
 	{
-		return ContextCollection.get(contextID).vaos.get(vaoID) as VertexArray;
+		return ContextCollection.getBind()?.vaos.get(vaoID) as VertexArray;
 	}
 	
 	// Create
-	public static create(contextID: string, vaoID: string)
+	public static create(vaoID: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.vaos;
 			let vao = new VertexArray(context, vaoID, manager);
@@ -121,61 +123,64 @@ export class VertexArray extends Resource
 	}
 
 	// Bind
-	public static bind(contextID: string, vaoID: string)
+	public static bind(vaoID: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.vaos;
-			manager.bind(manager.get(vaoID));
+			manager.bind(vaoID);
 		}
 	}
 	
 	// Unbind
-	public static unbind(contextID: string)
+	public static unbind()
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			context.vaos.unbindCurrent();
 		}
 	}
 
 	// Set vertex buffer
-	public static setVertexBuffer(contextID: string, vaoID: string, vboID: string)
+	public static setVertexBuffer(vaoID: string, vboID: string)
 	{
-		let vbo = ContextCollection.get(contextID).vbos.get(vboID) as VertexBuffer;
-		this.getVAO(contextID, vaoID)?.setVertexBuffer(vbo);
+		let vbo = ContextCollection.getBind()?.vbos.get(vboID) as VertexBuffer;
+		this.getVAO(vaoID)?.setVertexBuffer(vbo);
 	}
 	
 	// Set element buffer
-	public static setElementBuffer(contextID: string, vaoID: string, eboID: string)
+	public static setElementBuffer(vaoID: string, eboID: string)
 	{
-		let ebo = ContextCollection.get(contextID).ebos.get(eboID) as ElementBuffer;
-		this.getVAO(contextID, vaoID)?.setElementBuffer(ebo);
+		let ebo = ContextCollection.getBind()?.ebos.get(eboID) as ElementBuffer;
+		this.getVAO(vaoID)?.setElementBuffer(ebo);
 	}
 	
 	// Set buffer objects
-	public static setBuffers(contextID: string, vaoID: string, vboID: string, eboID: string)
+	public static setBuffers(vaoID: string, vboID: string, eboID: string)
 	{
-		let vbo = ContextCollection.get(contextID).vbos.get(vboID) as VertexBuffer;
-		let ebo = ContextCollection.get(contextID).ebos.get(eboID) as ElementBuffer;
-		this.getVAO(contextID, vaoID)?.setBuffers(vbo, ebo);
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let vbo = context.vbos.get(vboID) as VertexBuffer;
+			let ebo = context.ebos.get(eboID) as ElementBuffer;
+			this.getVAO(vaoID)?.setBuffers(vbo, ebo);
+		}
 	}
 	
 	// Draw with vertex buffer
-	public static draw(contextID: string, vaoID: string)
+	public static draw(vaoID: string)
 	{
-		this.getVAO(contextID, vaoID)?.draw();
+		this.getVAO(vaoID)?.draw();
 	}
 	
 	// Delete
-	public static delete(contextID: string, vaoID: string)
+	public static delete(vaoID: string)
 	{
-		ContextCollection.get(contextID).vaos.delete(vaoID);
+		ContextCollection.getBind()?.vaos.delete(vaoID);
 	}
 	
 	// Delete all vertex buffers
-	public static clear(contextID: string)
+	public static clear()
 	{
-		ContextCollection.get(contextID).vaos.clear();
+		ContextCollection.getBind()?.vaos.clear();
 	}
 }

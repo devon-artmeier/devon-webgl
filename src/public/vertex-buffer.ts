@@ -30,9 +30,9 @@ export class VertexBuffer extends Resource
 	{
 		super(context, id, manager);
 		let gl = this._context.gl;
-		
+
 		this._buffer = gl.createBuffer();
-					
+		
 		this._stride = 0;
 		for (const length of this._attribLengths) {
 			this._attribOffsets.push(this._stride);
@@ -40,7 +40,6 @@ export class VertexBuffer extends Resource
 		}
 		
 		this._data = new Float32Array(this._vertexCount * this._stride);
-
 	}
 	
 	// Bind
@@ -79,7 +78,7 @@ export class VertexBuffer extends Resource
 	{
 		let gl = this._context.gl;
 		this.tempBind();
-		
+
 		if (!this._created) {
 			// Create buffer data
 			gl.bufferData(gl.ARRAY_BUFFER, this._data,
@@ -89,7 +88,7 @@ export class VertexBuffer extends Resource
 			// Modify buffer data
 			gl.bufferSubData(gl.ARRAY_BUFFER, 0, this._data);
 		}
-		
+
 		this.tempUnbind();
 	}
 	
@@ -107,7 +106,7 @@ export class VertexBuffer extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		this._manager.unbind(this);
+		this._manager.unbind(this.id);
 		gl.deleteBuffer(this._buffer);
 	}
 	
@@ -116,16 +115,16 @@ export class VertexBuffer extends Resource
 	/********************/
 	
 	// Get vertex buffer
-	private static getVBO(contextID: string, vboID: string): VertexBuffer
+	private static getVBO(vboID: string): VertexBuffer
 	{
-		return ContextCollection.get(contextID)?.vbos.get(vboID) as VertexBuffer;
+		return ContextCollection.getBind()?.vbos.get(vboID) as VertexBuffer;
 	}
 	
 	// Create
-	public static create(contextID: string, vboID: string, vertexCount: number,
+	public static create(vboID: string, vertexCount: number,
 		attribLengths: number[], usage: BufferUsage)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.vbos;
 			let vbo = new VertexBuffer(context, vboID, manager, vertexCount, attribLengths, usage);
@@ -134,87 +133,87 @@ export class VertexBuffer extends Resource
 	}
 
 	// Bind
-	public static bind(contextID: string, vboID: string)
+	public static bind(vboID: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.vbos;
-			manager.bind(manager.get(vboID));
+			manager.bind(vboID);
 		}
 	}
 	
 	// Unbind
-	public static unbind(contextID: string)
+	public static unbind()
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			context.vbos.unbindCurrent();
 		}
 	}
 	
 	// Get vertex count
-	public static getVertexCount(contextID: string, vboID: string): number
+	public static getVertexCount(vboID: string): number
 	{
-		return this.getVBO(contextID, vboID)?.vertexCount;
+		return this.getVBO(vboID)?.vertexCount;
 	}
 	
 	// Get attribute count
-	public static getAttributeCount(contextID: string, vboID: string): number
+	public static getAttributeCount(vboID: string): number
 	{
-		return this.getVBO(contextID, vboID)?.attribCount;
+		return this.getVBO(vboID)?.attribCount;
 	}
 	
 	// Get attribute lengths
-	public static getAttributeLengths(contextID: string, vboID: string): ReadonlyArray<number>
+	public static getAttributeLengths(vboID: string): ReadonlyArray<number>
 	{
-		return this.getVBO(contextID, vboID)?.attribLengths;
+		return this.getVBO(vboID)?.attribLengths;
 	}
 	
 	// Get attribute offsets
-	public static getAttributeOffset(contextID: string, vboID: string): ReadonlyArray<number>
+	public static getAttributeOffset(vboID: string): ReadonlyArray<number>
 	{
-		return this.getVBO(contextID, vboID)?.attribOffsets;
+		return this.getVBO(vboID)?.attribOffsets;
 	}
 	
 	// Get stride
-	public static getStride(contextID: string, vboID: string): number
+	public static getStride(vboID: string): number
 	{
-		return this.getVBO(contextID, vboID)?.stride;
+		return this.getVBO(vboID)?.stride;
 	}
 	
 	// Get usage
-	public static getUsage(contextID: string, vboID: string): BufferUsage
+	public static getUsage(vboID: string): BufferUsage
 	{
-		return this.getVBO(contextID, vboID)?.usage;
+		return this.getVBO(vboID)?.usage;
 	}
 	
 	// Get data
-	public static getData(contextID: string, vboID: string): Float32Array
+	public static getData(vboID: string): Float32Array
 	{
-		return this.getVBO(contextID, vboID)?.data;
+		return this.getVBO(vboID)?.data;
 	}
 	
 	// Set data
-	public static setData(contextID: string, vboID: string, data: Float32Array, offset: number)
+	public static setData(vboID: string, data: Float32Array, offset: number)
 	{
-		this.getVBO(contextID, vboID)?.setData(data, offset);
+		this.getVBO(vboID)?.setData(data, offset);
 	}
 	
 	// Buffer data
-	public static bufferData(contextID: string, vboID: string)
+	public static bufferData(vboID: string)
 	{
-		this.getVBO(contextID, vboID)?.bufferData();
+		this.getVBO(vboID)?.bufferData();
 	}
 	
 	// Delete
-	public static delete(contextID: string, vboID: string)
+	public static delete(vboID: string)
 	{
-		ContextCollection.get(contextID).vbos.delete(vboID);
+		ContextCollection.getBind().vbos.delete(vboID);
 	}
 	
 	// Delete all vertex buffers
-	public static clear(contextID: string)
+	public static clear()
 	{
-		ContextCollection.get(contextID).vbos.clear();
+		ContextCollection.getBind().vbos.clear();
 	}
 }

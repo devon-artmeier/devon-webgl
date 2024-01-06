@@ -29,7 +29,7 @@ export class Framebuffer extends Resource
 	{
 		super(context, id, manager);
 		let gl = this._context.gl;
-
+		
 		this._buffer = gl.createFramebuffer();
 		this._texture = gl.createTexture();
 		this._depth = gl.createTexture();
@@ -41,18 +41,18 @@ export class Framebuffer extends Resource
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._width, this._height, 0,
 			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._width * this._height * 4));
-		
+			
 		gl.bindTexture(gl.TEXTURE_2D, this._depth);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._width, this._height, 0,
 			gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
 		
 		this._context.textures.rebind();
-		
+			
 		this.tempBind();
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
 			gl.TEXTURE_2D, this._texture, 0);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT,
-			gl.TEXTURE_2D, this._depth, 0); 
+			gl.TEXTURE_2D, this._depth, 0);
 		this.tempUnbind();
 	}
 	
@@ -83,8 +83,8 @@ export class Framebuffer extends Resource
 	{
 		let gl = this._context.gl;
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		
 		this._filter = filter;
+
 		if (this._filter == TextureFilter.Bilinear) {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -92,7 +92,7 @@ export class Framebuffer extends Resource
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		}
-		
+
 		this._context.textures.rebind();
 	}
 	
@@ -108,10 +108,10 @@ export class Framebuffer extends Resource
 	{
 		let gl = this._context.gl;
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		
+
 		this._wrapX = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(mode));
-		
+
 		this._context.textures.rebind();
 	}
 	
@@ -120,10 +120,10 @@ export class Framebuffer extends Resource
 	{
 		let gl = this._context.gl;
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		
+
 		this._wrapY = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(mode));
-		
+
 		this._context.textures.rebind();
 	}
 	
@@ -132,12 +132,12 @@ export class Framebuffer extends Resource
 	{
 		let gl = this._context.gl;
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		
+
 		this._wrapX = modeX;
 		this._wrapY = modeY;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(modeX));
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(modeY));
-		
+
 		this._context.textures.rebind();
 	}
 	
@@ -146,12 +146,12 @@ export class Framebuffer extends Resource
 	{
 		let gl = this._context.gl;
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		
+
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0,
 			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4));
 		this._width = width;
 		this._height = height;
-		
+
 		this._context.textures.rebind();
 	}
 	
@@ -159,7 +159,7 @@ export class Framebuffer extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		this._manager.unbind(this);
+		this._manager.unbind(this.id);
 		gl.deleteFramebuffer(this._buffer);
 		gl.deleteTexture(this._texture);
 		gl.deleteTexture(this._buffer);
@@ -170,15 +170,15 @@ export class Framebuffer extends Resource
 	/********************/
 	
 	// Get framebuffer
-	private static getFramebuffer(contextID: string, fboID: string): Framebuffer
+	private static getFBO(fboID: string): Framebuffer
 	{
-		return ContextCollection.get(contextID)?.fbos.get(fboID) as Framebuffer;
+		return ContextCollection.getBind()?.fbos.get(fboID) as Framebuffer;
 	}
 
 	// Create
-	public static create(contextID: string, fboID: string, width: number, height: number)
+	public static create(fboID: string, width: number, height: number)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.fbos;
 			let fbo = new Framebuffer(context, fboID, manager, width, height);
@@ -187,99 +187,99 @@ export class Framebuffer extends Resource
 	}
 	
 	// Bind
-	public static bind(contextID: string, fboID: string)
+	public static bind(fboID: string)
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			let manager = context.fbos;
-			manager.bind(manager.get(fboID));
+			manager.bind(fboID);
 		}
 	}
 	
 	// Unbind
-	public static unbind(contextID: string)
+	public static unbind()
 	{
-		let context = ContextCollection.get(contextID);
+		let context = ContextCollection.getBind();
 		if (context != null) {
 			context.fbos.unbindCurrent();
 		}
 	}
 	
 	// Get width
-	public static getWidth(contextID: string, fboID: string): number
+	public static getWidth(fboID: string): number
 	{
-		return this.getFramebuffer(contextID, fboID)?.width;
+		return this.getFBO(fboID)?.width;
 	}
 	
 	// Get height
-	public static getHeight(contextID: string, fboID: string): number
+	public static getHeight(fboID: string): number
 	{
-		return this.getFramebuffer(contextID, fboID)?.height;
+		return this.getFBO(fboID)?.height;
 	}
 	
 	// Get filter
-	public static getFilter(contextID: string, fboID: string): TextureFilter
+	public static getFilter(fboID: string): TextureFilter
 	{
-		return this.getFramebuffer(contextID, fboID)?.height;
+		return this.getFBO(fboID)?.height;
 	}
 	
 	// Get horizontal wrap mode
-	public static getWrapX(contextID: string, fboID: string): TextureWrap
+	public static getWrapX(fboID: string): TextureWrap
 	{
-		return this.getFramebuffer(contextID, fboID)?.wrapX;
+		return this.getFBO(fboID)?.wrapX;
 	}
 	
 	// Get vertical wrap mode
-	public static getWrapY(contextID: string, fboID: string): TextureWrap
+	public static getWrapY(fboID: string): TextureWrap
 	{
-		return this.getFramebuffer(contextID, fboID)?.wrapY;
+		return this.getFBO(fboID)?.wrapY;
 	}
 	
 	// Set filter
-	public static setFilter(contextID: string, fboID: string, filter: TextureFilter)
+	public static setFilter(fboID: string, filter: TextureFilter)
 	{
-		this.getFramebuffer(contextID, fboID)?.setFilter(filter);
+		this.getFBO(fboID)?.setFilter(filter);
 	}
 	
 	// Set horizontal wrap mode
-	public static setWrapX(contextID: string, fboID: string, wrap: TextureWrap)
+	public static setWrapX(fboID: string, wrap: TextureWrap)
 	{
-		this.getFramebuffer(contextID, fboID)?.setWrapX(wrap);
+		this.getFBO(fboID)?.setWrapX(wrap);
 	}
 	
 	// Set vertical wrap mode
-	public static setWrapY(contextID: string, fboID: string, wrap: TextureWrap)
+	public static setWrapY(fboID: string, wrap: TextureWrap)
 	{
-		this.getFramebuffer(contextID, fboID)?.setWrapY(wrap);
+		this.getFBO(fboID)?.setWrapY(wrap);
 	}
 	
 	// Set wrap modes
-	public static setWrap(contextID: string, fboID: string, wrapX: TextureWrap, wrapY: TextureWrap)
+	public static setWrap(fboID: string, wrapX: TextureWrap, wrapY: TextureWrap)
 	{
-		this.getFramebuffer(contextID, fboID)?.setWrap(wrapX, wrapY);
+		this.getFBO(fboID)?.setWrap(wrapX, wrapY);
 	}
 
 	// Bind texture
-	public static bindTexture(contextID: string, fboID: string)
+	public static bindTexture(fboID: string)
 	{
-		this.getFramebuffer(contextID, fboID)?.bindTexture();
+		this.getFBO(fboID)?.bindTexture();
 	}
 	
 	// Resize
-	public static resize(contextID: string, fboID: string, width: number, height: number)
+	public static resize(fboID: string, width: number, height: number)
 	{
-		this.getFramebuffer(contextID, fboID)?.resize(width, height);
+		this.getFBO(fboID)?.resize(width, height);
 	}
 	
 	// Delete
-	public static delete(contextID: string, fboID: string)
+	public static delete(fboID: string)
 	{
-		ContextCollection.get(contextID)?.fbos.delete(fboID);
+		ContextCollection.getBind()?.fbos.delete(fboID);
 	}
 	
 	// Delete all textures
-	public static clear(contextID: string)
+	public static clear()
 	{
-		ContextCollection.get(contextID)?.fbos.clear();
+		ContextCollection.getBind()?.fbos.clear();
 	}
 }

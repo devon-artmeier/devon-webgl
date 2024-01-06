@@ -121,74 +121,57 @@ const elementsCube = new Uint16Array([
 	20, 21, 22, 21, 22, 23
 ]);
 
-const squareVertices = new Float32Array([
-	-64, -64,  64,  0, 1,
-	 64, -64,  64,  1, 1,
-	-64,  64,  64,  0, 0,
-	 64,  64,  64,  1, 0
-]);
-
-const elementsSquare = new Uint16Array([
-	0,  1,  2,  1,  2,  3
-]);
-
 function createContext(contextName: string, canvasID: string)
 {
 	DGL.Context.create(contextName, document.getElementById(canvasID) as HTMLCanvasElement);
-	DGL.Context.enableBlend(contextName);
+	DGL.Context.bind(contextName);
 	
-	DGL.Texture.create(contextName, "texture_test");
-	DGL.Texture.setFilter(contextName, "texture_test", DGL.TextureFilter.Bilinear);
-	DGL.Texture.setWrap(contextName, "texture_test",  DGL.TextureWrap.Clamp, DGL.TextureWrap.Clamp);
-	DGL.Texture.loadImage(contextName, "texture_test", "./img/test.png");
-
-	DGL.Shader.create(contextName, "shader_main", vertexShaderCode, fragShaderCode);
-	DGL.Shader.create(contextName, "shader_main2", vertexShaderCode, fragShaderCode2);
-	DGL.Shader.create(contextName, "shader_main3", vertexShaderCode, fragShaderCode3);
+	DGL.Context.enableBlend();
 	
-	DGL.VertexBuffer.create(contextName, "vbo_cube", 24, [3, 2], DGL.BufferUsage.Static);
-	DGL.VertexBuffer.setData(contextName, "vbo_cube", cubeVertices, 0);
-	DGL.VertexBuffer.bufferData(contextName, "vbo_cube");
+	DGL.Texture.create("texture_test");
+	DGL.Texture.setFilter("texture_test", DGL.TextureFilter.Bilinear);
+	DGL.Texture.setWrap("texture_test",  DGL.TextureWrap.Clamp, DGL.TextureWrap.Clamp);
+	DGL.Texture.loadImage("texture_test", "./img/test.png");
 
-	DGL.ElementBuffer.create(contextName, "ebo_cube", 36, DGL.BufferUsage.Static);
-	DGL.ElementBuffer.setData(contextName, "ebo_cube", elementsCube, 0);
-	DGL.ElementBuffer.bufferData(contextName, "ebo_cube");
+	DGL.Shader.create("shader_main", vertexShaderCode, fragShaderCode);
+	DGL.Shader.create("shader_main2", vertexShaderCode, fragShaderCode2);
+	DGL.Shader.create("shader_main3", vertexShaderCode, fragShaderCode3);
 	
-	DGL.VertexBuffer.create(contextName, "vbo_square", 4, [3, 2], DGL.BufferUsage.Static);
-	DGL.VertexBuffer.setData(contextName, "vbo_square", squareVertices, 0);
-	DGL.VertexBuffer.bufferData(contextName, "vbo_square");
+	DGL.VertexBuffer.create("vbo_cube", 24, [3, 2], DGL.BufferUsage.Static);
+	DGL.VertexBuffer.setData("vbo_cube", cubeVertices, 0);
+	DGL.VertexBuffer.bufferData("vbo_cube");
 
-	DGL.ElementBuffer.create(contextName, "ebo_square", 6, DGL.BufferUsage.Static);
-	DGL.ElementBuffer.setData(contextName, "ebo_square", elementsSquare, 0);
-	DGL.ElementBuffer.bufferData(contextName, "ebo_square");
+	DGL.ElementBuffer.create("ebo_cube", 36, DGL.BufferUsage.Static);
+	DGL.ElementBuffer.setData("ebo_cube", elementsCube, 0);
+	DGL.ElementBuffer.bufferData("ebo_cube");
 
-	DGL.VertexArray.create(contextName, "vao_cube");
-	DGL.VertexArray.setBuffers(contextName, "vao_cube", "vbo_cube", "ebo_cube");
+	DGL.VertexArray.create("vao_cube");
+	DGL.VertexArray.setBuffers("vao_cube", "vbo_cube", "ebo_cube");
 
-	DGL.VertexArray.create(contextName, "vao_square");
-	DGL.VertexArray.setBuffers(contextName, "vao_square", "vbo_square", "ebo_square");
+	DGL.Framebuffer.create("fbo", 256, 256);
 
-	DGL.Framebuffer.create(contextName, "fbo", 256, 256);
-
-	DGL.Context.enableDepth(contextName);
-	DGL.Context.enableStencil(contextName);
-	DGL.Context.setStencilOptions(contextName, DGL.StencilOption.Keep, DGL.StencilOption.Keep, DGL.StencilOption.Replace);
+	DGL.Context.enableDepth();
+	DGL.Context.enableStencil();
+	DGL.Context.setStencilOptions(DGL.StencilOption.Keep, DGL.StencilOption.Keep, DGL.StencilOption.Replace);
 }
 
 function renderContext(contextName: string, time: number)
 {
+	DGL.Context.bind(contextName);
+	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Context.enableDepth(contextName);
-	DGL.Framebuffer.bind(contextName, "fbo");
-	DGL.Context.setViewport(contextName, 0, 0, 256, 256);
-	DGL.Context.disableScissor(contextName);
-	DGL.Context.clear(contextName, DGL.Color.FromRGBA(1, 0, 1, 1));
+	DGL.Framebuffer.bind("fbo");
 	
+	DGL.Context.enableDepth();
+	DGL.Context.setViewport(0, 0, 256, 256);
+	DGL.Context.disableScissor();
+	DGL.Context.clear(DGL.Color.FromRGBA(1, 0, 1, 1));
+
 	let perspective = DGL. WebGLMath.perspectiveMatrix(60, 256, 256, 0.1, 1000);
 
-	DGL.Context.setStencilFunction(contextName, DGL.Condition.Always, 1, 0xFF);
-	DGL.Context.setStencilMask(contextName, 0xFF);
+	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
+	DGL.Context.setStencilMask(0xFF);
 
 	let model = DGL.WebGLMath.translateMatrix(0, 0, 0);
 	model = model.multiply(DGL.WebGLMath.rotateMatrix(
@@ -202,30 +185,27 @@ function renderContext(contextName: string, time: number)
 
 	let view = DGL.WebGLMath.lookAtMatrix(x,y,64+z, 0,0,0, 0,1,0);
 
-	DGL.Texture.setActive(contextName, 0);
-	DGL.Texture.bind(contextName, "texture_test");
+	DGL.Shader.setUniform1i("shader_main", "txt", 0);
+	DGL.Shader.setUniformMatrix4fv("shader_main", "model", model.flat());
+	DGL.Shader.setUniformMatrix4fv("shader_main", "view", view.flat());
+	DGL.Shader.setUniformMatrix4fv("shader_main", "projection", perspective.flat());
 
-	DGL.Shader.setUniform1i(contextName, "shader_main", "txt", 0);
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "model", model.flat());
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "view", view.flat());
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main", "projection", perspective.flat());
-
-	DGL.Shader.bind(contextName, "shader_main");
-	DGL.Texture.setActive(contextName, 0);
-	DGL.Texture.bind(contextName, "texture_test");
-	DGL.VertexArray.draw(contextName, "vao_cube");
+	DGL.Shader.bind("shader_main");
+	DGL.Texture.setActive(0);
+	DGL.Texture.bind("texture_test");
+	DGL.VertexArray.draw("vao_cube");
 	
-	DGL.Framebuffer.unbind(contextName);
+	DGL.Framebuffer.unbind();
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Context.setViewport(contextName, 0, 0, 640, 480);
-	DGL.Context.clear(contextName, DGL.Color.FromRGBA(0, 0, 0, 1));
+	DGL.Context.setViewport(0, 0, 640, 480);
+	DGL.Context.clear(DGL.Color.FromRGBA(0, 0, 0, 1));
 	
 	perspective = DGL.WebGLMath.perspectiveMatrix(60, 640, 480, 0.1, 1000);
 	
-	DGL.Context.setStencilFunction(contextName, DGL.Condition.Always, 1, 0xFF);
-	DGL.Context.setStencilMask(contextName, 0xFF)
+	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
+	DGL.Context.setStencilMask(0xFF)
 
 	model = DGL.WebGLMath.translateMatrix(0, 0, 0);
 	model = model.multiply(DGL.WebGLMath.rotateMatrix(
@@ -235,22 +215,22 @@ function renderContext(contextName: string, time: number)
 
 	view = DGL.WebGLMath.lookAtMatrix(x,y,256+z, 0,0,0, 0,1,0);
 	
-	DGL.Shader.setUniform1i(contextName, "shader_main3", "txt", 0);
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "model", model.flat());
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "view", view.flat());
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main3", "projection", perspective.flat());
-	DGL.Shader.setUniform1f(contextName, "shader_main3", "time", time);
+	DGL.Shader.setUniform1i("shader_main3", "txt", 0);
+	DGL.Shader.setUniformMatrix4fv("shader_main3", "model", model.flat());
+	DGL.Shader.setUniformMatrix4fv("shader_main3", "view", view.flat());
+	DGL.Shader.setUniformMatrix4fv("shader_main3", "projection", perspective.flat());
+	DGL.Shader.setUniform1f("shader_main3", "time", time);
 
-	DGL.Shader.bind(contextName, "shader_main3");
-	DGL.Texture.setActive(contextName, 0);
-	DGL.Framebuffer.bindTexture(contextName, "fbo");
-	DGL.VertexArray.draw(contextName, "vao_cube");
+	DGL.Shader.bind("shader_main3");
+	DGL.Texture.setActive(0);
+	DGL.Framebuffer.bindTexture("fbo");
+	DGL.VertexArray.draw("vao_cube");
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Context.setStencilFunction(contextName, DGL.Condition.NotEqual, 1, 0xFF);
-	DGL.Context.setStencilMask(contextName, 0x00);
-	DGL.Context.disableDepth(contextName);
+	DGL.Context.setStencilFunction(DGL.Condition.NotEqual, 1, 0xFF);
+	DGL.Context.setStencilMask(0x00);
+	DGL.Context.disableDepth();
 	
 	model = DGL.WebGLMath.translateMatrix(0, 0, 0);
 	model = model.multiply(DGL.WebGLMath.rotateMatrix(
@@ -259,16 +239,16 @@ function renderContext(contextName: string, time: number)
 		DGL.WebGLMath.degToRad(time / 25)));
 	model = model.multiply(DGL.WebGLMath.scaleMatrix(1.1, 1.1, 1.1));
 	
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "model", model.flat());
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "view", view.flat());
-	DGL.Shader.setUniformMatrix4fv(contextName, "shader_main2", "projection", perspective.flat());
-	DGL.Shader.setUniform1f(contextName, "shader_main2", "time", time);
+	DGL.Shader.setUniformMatrix4fv("shader_main2", "model", model.flat());
+	DGL.Shader.setUniformMatrix4fv("shader_main2", "view", view.flat());
+	DGL.Shader.setUniformMatrix4fv("shader_main2", "projection", perspective.flat());
+	DGL.Shader.setUniform1f("shader_main2", "time", time);
 
-	DGL.Shader.bind(contextName, "shader_main2");
-	DGL.VertexArray.draw(contextName, "vao_cube");
+	DGL.Shader.bind("shader_main2");
+	DGL.VertexArray.draw("vao_cube");
 	
-	DGL.Context.setStencilMask(contextName, 0xFF);
-	DGL.Context.setStencilFunction(contextName, DGL.Condition.Always, 1, 0xFF);
+	DGL.Context.setStencilMask(0xFF);
+	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
 }
 
 function render(time: number)
