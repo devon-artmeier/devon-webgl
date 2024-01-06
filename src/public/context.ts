@@ -9,23 +9,19 @@ export class Context extends Resource
 	public readonly gl: WebGL2RenderingContext;
 	public readonly textures = new ResourceManager();
 	public readonly shaders = new ResourceManager();
-	public readonly vbos = new ResourceManager();
-	public readonly ebos = new ResourceManager();
-	public readonly vaos = new ResourceManager();
+	public readonly meshes = new ResourceManager();
 	public readonly fbos = new ResourceManager();
-	
-	get canvas(): HTMLCanvasElement { return this._canvas; }
 	
 	/**************************/
 	/* CLASS OBJECT FUNCTIONS */
 	/**************************/
 	
 	// Constructor
-	constructor(private _canvas: HTMLCanvasElement, id: string, manager: ResourceManager)
+	constructor(public readonly canvas: HTMLCanvasElement, id: string)
 	{
-		super(null, id, manager);
+		super(null, id);
 
-		this.gl = this._canvas?.getContext("webgl2",
+		this.gl = this.canvas?.getContext("webgl2",
 			{ alpha: true, stencil: true, preserveDrawingBuffer: true });
 	}
 
@@ -34,9 +30,7 @@ export class Context extends Resource
 	{
 		this.textures.clear();
 		this.shaders.clear();
-		this.vbos.clear();
-		this.ebos.clear();
-		this.vaos.clear();
+		this.meshes.clear();
 		this.fbos.clear();
 	}
 	
@@ -48,9 +42,9 @@ export class Context extends Resource
 	public static create(id: string, canvas: HTMLCanvasElement)
 	{
 		let manager = ContextCollection.contexts;
-		let context = new Context(canvas, id, manager);
+		let context = new Context(canvas, id);
 		if (context.gl != null) {
-			manager.add(id, new Context(canvas, id, manager));
+			manager.add(id, new Context(canvas, id));
 		}
 	}
 
@@ -82,7 +76,7 @@ export class Context extends Resource
 	}
 
 	// Get viewport
-	public static getViewport(): number[]
+	public static getViewport(): readonly number[]
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {

@@ -6,7 +6,7 @@ export class Matrix
 
 	// Generate orthographic projection matrix 
 	public static ortho(left: number, right: number, top: number, bottom: number,
-		near: number, far: number): number[]
+		near: number, far: number): readonly number[]
 	{
 		return [
 			2 / (right - left), 0, 0, 0,
@@ -18,7 +18,7 @@ export class Matrix
 
 	// Generate perspective projection matrix
 	public static perspective(fov: number, width: number, height: number,
-		near: number, far: number): number[]
+		near: number, far: number): readonly number[]
 	{
 		let fovTan = 1 / Math.tan((fov * (Math.PI / 180)) / 2);
 		let farMNear = 1 / (far - near);
@@ -32,7 +32,7 @@ export class Matrix
 	}
 
 	// Multiply matrix
-	private static multiply(a: number[], b: number[]): number[]
+	private static multiply(a: readonly number[], b: readonly number[]): number[]
 	{
 		return [
 			(a[0] * b[0] ) + (a[4] * b[1] ) + (a[8]  * b[2] ) + (a[12] * b[3] ),
@@ -62,7 +62,7 @@ export class Matrix
 
 	// Get cross product of vectors
 	private static vectorCross(x1: number, y1: number, z1: number,
-		x2: number, y2: number, z2: number): number[]
+		x2: number, y2: number, z2: number): readonly number[]
 	{
 		return [
 			(y1 * z2) - (z1 * y2),
@@ -72,7 +72,7 @@ export class Matrix
 	}
 
 	// Normalize vector
-	private static vectorNormalize(x: number, y: number, z: number): number[]
+	private static vectorNormalize(x: number, y: number, z: number): readonly number[]
 	{
 		let length = Math.sqrt(this.vectorDot(x, y, z, x, y, z));
 		return [x / length, y / length, z / length];
@@ -81,7 +81,7 @@ export class Matrix
 	// Generate 3D view matrix
 	public static view3D(eyeX: number, eyeY: number, eyeZ: number,
 		atX: number, atY: number, atZ: number,
-		upX: number, upY: number, upZ: number):  number[]
+		upX: number, upY: number, upZ: number): readonly number[]
 	{
 		let z = this.vectorNormalize(eyeX - atX, eyeY - atY, eyeZ - atZ);
 		let crossZ = this.vectorCross(upX, upY, upZ, z[0], z[1], z[2]);
@@ -101,7 +101,7 @@ export class Matrix
 	}
 
 	// Generate 2D view matrix
-	public static view2D(x: number, y: number): number[]
+	public static view2D(x: number, y: number): readonly number[]
 	{
 		return [
 			1, 0, 0, 0,
@@ -114,7 +114,7 @@ export class Matrix
 	// Generate 3D model matrix
 	public static model3D(transX: number, transY: number, transZ: number,
 		rotateX: number, rotateY: number, rotateZ: number,
-		scaleX: number, scaleY: number, scaleZ: number): number[]
+		scaleX: number, scaleY: number, scaleZ: number): readonly number[]
 	{
 		let sinX = Math.sin(rotateX);
 		let cosX = Math.cos(rotateX);
@@ -168,7 +168,7 @@ export class Matrix
 
 	// Generate 2D model matrix
 	public static model2D(transX: number, transY: number, rotate: number,
-		scaleX: number, scaleY: number):  number[]
+		scaleX: number, scaleY: number): readonly number[]
 	{
 		let sin = Math.sin(rotate);
 		let cos = Math.cos(rotate);

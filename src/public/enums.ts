@@ -13,14 +13,6 @@ export enum TextureWrap
 	Mirror
 }
 
-// Buffer object usage
-export enum BufferUsage
-{
-	Static,
-	Dynamic,
-	Stream
-}
-
 // Condition
 export enum Condition
 {

@@ -3,8 +3,9 @@ import { Resource } from "./resource";
 // Resource manager class
 export class ResourceManager
 {
+	public currentBind: Resource;
+	
 	private _pool = new Map<string, Resource>();
-	private _bind: Resource;
 	
 	// Add resource to pool
 	public add(resourceID: string, resource: Resource)
@@ -45,46 +46,5 @@ export class ResourceManager
 			resource.delete();
 		}
 		this._pool.clear();
-	}
-	
-	// Bind
-	public bind(resourceID: string)
-	{
-		let resource = this._pool.get(resourceID);
-		if (resource != null && this._bind != resource) {
-			this._bind = resource;
-			resource.bind();
-		}
-	}
-	
-	// Unbind resource
-	public unbind(resourceID: string)
-	{
-		let resource = this._pool.get(resourceID);
-		if (resource != null && this._bind == resource) {
-			this._bind = null;
-			resource.unbind();
-		}
-	}
-	
-	// Unbind
-	public unbindCurrent()
-	{
-		if (this._bind != null) {
-			this._bind.unbind();
-			this._bind = null;
-		}
-	}
-	
-	// Check bind
-	public checkBind(resource: Resource)
-	{
-		return this._bind == resource;
-	}
-
-	// Rebind
-	public rebind()
-	{
-		this._bind?.bind();
 	}
 }

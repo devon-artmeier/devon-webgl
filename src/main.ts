@@ -80,46 +80,59 @@ void main(void)
 }
 `;
 
-const cubeVertices = new Float32Array([
-	-64, -64,  64,  0, 1,
-	 64, -64,  64,  1, 1,
-	-64,  64,  64,  0, 0,
-	 64,  64,  64,  1, 0,
-	 
-	 64, -64, -64,  0, 1,
-	-64, -64, -64,  1, 1,
-	 64,  64, -64,  0, 0,
-	-64,  64, -64,  1, 0,
-	
-	-64, -64, -64,  0, 1,
-	-64, -64,  64,  1, 1,
-	-64,  64, -64,  0, 0,
-	-64,  64,  64,  1, 0,
-	
-	 64, -64,  64,  0, 1,
-	 64, -64, -64,  1, 1,
-	 64,  64,  64,  0, 0,
-	 64,  64, -64,  1, 0,
-	 
-	-64, -64, -64,  0, 1,
-	 64, -64, -64,  1, 1,
-	-64, -64,  64,  0, 0,
-	 64, -64,  64,  1, 0,
-	 
-	-64,  64,  64,  0, 1,
-	 64,  64,  64,  1, 1,
-	-64,  64, -64,  0, 0,
-	 64,  64, -64,  1, 0,
-]);
+class Vertex extends DGL.Vertex
+{
+	// Constructor
+	constructor(public x: number, public y: number, public z: number,
+		public tx: number, public ty: number) { super(); }
 
-const elementsCube = new Uint16Array([
+	// Get data
+	public getData(): readonly number[][]
+	{
+		return [[this.x, this.y, this.z], [this.tx, this.ty]];
+	}
+}
+
+const cubeVertices = [
+	new Vertex(-64, -64,  64,  0, 1),
+	new Vertex( 64, -64,  64,  1, 1),
+	new Vertex(-64,  64,  64,  0, 0),
+	new Vertex( 64,  64,  64,  1, 0),
+	 
+	new Vertex( 64, -64, -64,  0, 1),
+	new Vertex(-64, -64, -64,  1, 1),
+	new Vertex( 64,  64, -64,  0, 0),
+	new Vertex(-64,  64, -64,  1, 0),
+	
+	new Vertex(-64, -64, -64,  0, 1),
+	new Vertex(-64, -64,  64,  1, 1),
+	new Vertex(-64,  64, -64,  0, 0),
+	new Vertex(-64,  64,  64,  1, 0),
+	
+	new Vertex( 64, -64,  64,  0, 1),
+	new Vertex( 64, -64, -64,  1, 1),
+	new Vertex( 64,  64,  64,  0, 0),
+	new Vertex( 64,  64, -64,  1, 0),
+	 
+	new Vertex(-64, -64, -64,  0, 1),
+	new Vertex( 64, -64, -64,  1, 1),
+	new Vertex(-64, -64,  64,  0, 0),
+	new Vertex( 64, -64,  64,  1, 0),
+	 
+	new Vertex(-64,  64,  64,  0, 1),
+	new Vertex( 64,  64,  64,  1, 1),
+	new Vertex(-64,  64, -64,  0, 0),
+	new Vertex( 64,  64, -64,  1, 0)
+];
+
+const elementsCube = [
 	0,  1,  2,  1,  2,  3,
 	4,  5,  6,  5,  6,  7,
 	8,  9,  10, 9,  10, 11,
 	12, 13, 14, 13, 14, 15,
 	16, 17, 18, 17, 18, 19,
 	20, 21, 22, 21, 22, 23
-]);
+];
 
 function radians(angle: number): number
 {
@@ -141,17 +154,8 @@ function createContext(contextName: string, canvasID: string)
 	DGL.Shader.create("shader_main", vertexShaderCode, fragShaderCode);
 	DGL.Shader.create("shader_main2", vertexShaderCode, fragShaderCode2);
 	DGL.Shader.create("shader_main3", vertexShaderCode, fragShaderCode3);
-	
-	DGL.VertexBuffer.create("vbo_cube", 24, [3, 2], DGL.BufferUsage.Static);
-	DGL.VertexBuffer.setData("vbo_cube", cubeVertices, 0);
-	DGL.VertexBuffer.bufferData("vbo_cube");
 
-	DGL.ElementBuffer.create("ebo_cube", 36, DGL.BufferUsage.Static);
-	DGL.ElementBuffer.setData("ebo_cube", elementsCube, 0);
-	DGL.ElementBuffer.bufferData("ebo_cube");
-
-	DGL.VertexArray.create("vao_cube");
-	DGL.VertexArray.setBuffers("vao_cube", "vbo_cube", "ebo_cube");
+	DGL.Mesh.createStatic("mesh_cube", cubeVertices, elementsCube);
 
 	DGL.Framebuffer.create("fbo", 256, 256);
 
@@ -187,15 +191,14 @@ function renderContext(contextName: string, time: number)
 
 	let view = DGL.Matrix.view3D(x, y, 64 + z, 0, 0, 0, 0, 1, 0);
 
-	DGL.Shader.setUniform1i("shader_main", "txt", 0);
+	DGL.Shader.setUniformTexture("shader_main", "txt", 0);
 	DGL.Shader.setUniformMatrix4fv("shader_main", "model", model);
 	DGL.Shader.setUniformMatrix4fv("shader_main", "view", view);
 	DGL.Shader.setUniformMatrix4fv("shader_main", "projection", perspective);
 
 	DGL.Shader.bind("shader_main");
-	DGL.Texture.setActive(0);
-	DGL.Texture.bind("texture_test");
-	DGL.VertexArray.draw("vao_cube");
+	DGL.Texture.setActive("texture_test", 0);
+	DGL.Mesh.draw("mesh_cube");
 	
 	DGL.Framebuffer.unbind();
 	
@@ -214,16 +217,15 @@ function renderContext(contextName: string, time: number)
 
 	view = DGL.Matrix.view3D(x, y, 256 + z, 0, 0, 0, 0, 1, 0);
 
-	DGL.Shader.setUniform1i("shader_main3", "txt", 0);
+	DGL.Shader.setUniformTexture("shader_main3", "txt", 0);
 	DGL.Shader.setUniformMatrix4fv("shader_main3", "model", model);
 	DGL.Shader.setUniformMatrix4fv("shader_main3", "view", view);
 	DGL.Shader.setUniformMatrix4fv("shader_main3", "projection", perspective);
 	DGL.Shader.setUniform1f("shader_main3", "time", time);
 
 	DGL.Shader.bind("shader_main3");
-	DGL.Texture.setActive(0);
-	DGL.Framebuffer.bindTexture("fbo");
-	DGL.VertexArray.draw("vao_cube");
+	DGL.Framebuffer.setActiveTexture("fbo", 0);
+	DGL.Mesh.draw("mesh_cube");
 	
 	///////////////////////////////////////////////////////////////
 	
@@ -240,7 +242,7 @@ function renderContext(contextName: string, time: number)
 	DGL.Shader.setUniform1f("shader_main2", "time", time);
 
 	DGL.Shader.bind("shader_main2");
-	DGL.VertexArray.draw("vao_cube");
+	DGL.Mesh.draw("mesh_cube");
 	
 	DGL.Context.setStencilMask(0xFF);
 	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);

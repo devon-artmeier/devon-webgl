@@ -1,6 +1,5 @@
 import { TextureFilter, TextureWrap } from "./enums";
 import { Resource } from "../private/resource";
-import { ResourceManager } from "../private/resource-manager"
 import { Context } from "./context";
 import { ContextCollection } from "../private/context-collection";
 
@@ -24,10 +23,9 @@ export class Framebuffer extends Resource
 	/**************************/
 	
 	// Constructor
-	private constructor(context: Context, id: string, manager: ResourceManager,
-		private _width: number, private _height: number)
+	private constructor(context: Context, id: string, private _width: number, private _height: number)
 	{
-		super(context, id, manager);
+		super(context, id);
 		let gl = this._context.gl;
 		
 		this._buffer = gl.createFramebuffer();
@@ -46,35 +44,28 @@ export class Framebuffer extends Resource
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._width, this._height, 0,
 			gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
 		
-		this._context.textures.rebind();
-			
-		this.tempBind();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._buffer);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
 			gl.TEXTURE_2D, this._texture, 0);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT,
 			gl.TEXTURE_2D, this._depth, 0);
-		this.tempUnbind();
+		this._context.fbos.currentBind?.bind();
 	}
 	
 	// Bind
 	public bind()
 	{
-		let gl = this._context.gl;
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._buffer);
-	}
-	
-	// Unbind
-	public unbind()
-	{
-		let gl = this._context.gl;
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		if (this._context.fbos.currentBind != this) {
+			let gl = this._context.gl;
+			gl.bindFramebuffer(gl.FRAMEBUFFER, this._buffer);
+			this._context.fbos.currentBind = this;
+		}
 	}
 
 	// Bind texture
 	public bindTexture()
 	{
 		let gl = this._context.gl;
-		this._context.textures.unbindCurrent();
 		gl.bindTexture(gl.TEXTURE_2D, this._texture);
 	}
 	
@@ -92,8 +83,6 @@ export class Framebuffer extends Resource
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		}
-
-		this._context.textures.rebind();
 	}
 	
 	// Get wrap mode
@@ -111,8 +100,6 @@ export class Framebuffer extends Resource
 
 		this._wrapX = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(mode));
-
-		this._context.textures.rebind();
 	}
 	
 	// Set vertical wrap mode
@@ -123,8 +110,6 @@ export class Framebuffer extends Resource
 
 		this._wrapY = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(mode));
-
-		this._context.textures.rebind();
 	}
 	
 	// Set wrap modes
@@ -137,8 +122,6 @@ export class Framebuffer extends Resource
 		this._wrapY = modeY;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(modeX));
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(modeY));
-
-		this._context.textures.rebind();
 	}
 	
 	// Resize
@@ -151,15 +134,12 @@ export class Framebuffer extends Resource
 			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4));
 		this._width = width;
 		this._height = height;
-
-		this._context.textures.rebind();
 	}
 	
 	// Delete
 	public delete()
 	{
 		let gl = this._context.gl;
-		this._manager.unbind(this.id);
 		gl.deleteFramebuffer(this._buffer);
 		gl.deleteTexture(this._texture);
 		gl.deleteTexture(this._buffer);
@@ -180,20 +160,15 @@ export class Framebuffer extends Resource
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
-			let manager = context.fbos;
-			let fbo = new Framebuffer(context, fboID, manager, width, height);
-			manager.add(fboID, fbo);
+			let fbo = new Framebuffer(context, fboID, width, height);
+			context.fbos.add(fboID, fbo);
 		}
 	}
 	
 	// Bind
 	public static bind(fboID: string)
 	{
-		let context = ContextCollection.getBind();
-		if (context != null) {
-			let manager = context.fbos;
-			manager.bind(fboID);
-		}
+		return this.getFBO(fboID)?.bind();
 	}
 	
 	// Unbind
@@ -201,7 +176,8 @@ export class Framebuffer extends Resource
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
-			context.fbos.unbindCurrent();
+			let gl = context.gl;
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		}
 	}
 	
@@ -258,11 +234,17 @@ export class Framebuffer extends Resource
 	{
 		this.getFBO(fboID)?.setWrap(wrapX, wrapY);
 	}
-
-	// Bind texture
-	public static bindTexture(fboID: string)
+	
+	// Set active texture number
+	public static setActiveTexture(fboID: string, num: number)
 	{
-		this.getFBO(fboID)?.bindTexture();
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
+			gl.activeTexture(gl.TEXTURE1 + num);
+			this.getFBO(fboID)?.bindTexture();
+			gl.activeTexture(gl.TEXTURE0);
+		}
 	}
 	
 	// Resize
