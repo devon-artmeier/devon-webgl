@@ -1,4 +1,3 @@
-export * from "./color"
 export * from "./context"
 export * from "./enums";
 export * from "./framebuffer";

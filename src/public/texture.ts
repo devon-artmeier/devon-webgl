@@ -1,4 +1,4 @@
-import { Color } from "./color";
+import { Vector4 } from "../private/tuples";
 import { TextureFilter, TextureWrap } from "./enums";
 import { Resource } from "../private/resource";
 import { Context } from "./context";
@@ -104,13 +104,17 @@ export class Texture extends Resource
 	}
 	
 	// Generate with color
-	public generate(color: Color)
+	public generate(color: Vector4)
 	{
+		let conv = function(val: number) {
+			return Math.floor(val * 255);
+		};
+
 		let gl = this._context.gl;
 		this.bind();
 		
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA,
-			gl.UNSIGNED_BYTE, color.data8);
+			gl.UNSIGNED_BYTE, new Uint8Array([conv(color[0]), conv(color[1]), conv(color[2]), conv(color[3])]));
 		this._width = 1;
 		this._height = 1;
 	}
@@ -231,7 +235,7 @@ export class Texture extends Resource
 	}
 	
 	// Generate with color
-	public static generate(textureID: string, color: Color)
+	public static generate(textureID: string, color: Vector4)
 	{
 		this.getTexture(textureID)?.generate(color);
 	}

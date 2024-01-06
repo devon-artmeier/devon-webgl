@@ -1,3 +1,5 @@
+import { Matrix4, Vector2, Vector3 } from "../private/tuples";
+
 export class Matrix
 {
 	/********************/
@@ -6,7 +8,7 @@ export class Matrix
 
 	// Generate orthographic projection matrix 
 	public static ortho(left: number, right: number, top: number, bottom: number,
-		near: number, far: number): readonly number[]
+		near: number, far: number): Matrix4
 	{
 		return [
 			2 / (right - left), 0, 0, 0,
@@ -18,7 +20,7 @@ export class Matrix
 
 	// Generate perspective projection matrix
 	public static perspective(fov: number, width: number, height: number,
-		near: number, far: number): readonly number[]
+		near: number, far: number): Matrix4
 	{
 		let fovTan = 1 / Math.tan((fov * (Math.PI / 180)) / 2);
 		let farMNear = 1 / (far - near);
@@ -32,7 +34,7 @@ export class Matrix
 	}
 
 	// Multiply matrix
-	private static multiply(a: readonly number[], b: readonly number[]): number[]
+	private static multiply(a: Matrix4, b: Matrix4): Matrix4
 	{
 		return [
 			(a[0] * b[0] ) + (a[4] * b[1] ) + (a[8]  * b[2] ) + (a[12] * b[3] ),
@@ -54,43 +56,39 @@ export class Matrix
 	}
 
 	// Get dot product of vectors
-	private static vectorDot(x1: number, y1: number, z1: number,
-		x2: number, y2: number, z2: number): number
+	private static vectorDot(v1: Vector3, v2: Vector3): number
 	{
-		return (x1 * x2) + (y1 * y2) + (z1 * z2);
+		return (v1[0] * v2[0]) + (v1[1] * v2[1]) + (v1[2] * v2[2]);
 	}
 
 	// Get cross product of vectors
-	private static vectorCross(x1: number, y1: number, z1: number,
-		x2: number, y2: number, z2: number): readonly number[]
+	private static vectorCross(v1: Vector3, v2: Vector3): Vector3
 	{
 		return [
-			(y1 * z2) - (z1 * y2),
-			(z1 * x2) - (x1 * z2),
-			(x1 * y2) - (y1 * x2)
+			(v1[1] * v2[2]) - (v1[2] * v2[1]),
+			(v1[2] * v2[0]) - (v1[0] * v2[2]),
+			(v1[0] * v2[1]) - (v1[1] * v2[0])
 		];
 	}
 
 	// Normalize vector
-	private static vectorNormalize(x: number, y: number, z: number): readonly number[]
+	private static vectorNormalize(v: Vector3): Vector3
 	{
-		let length = Math.sqrt(this.vectorDot(x, y, z, x, y, z));
-		return [x / length, y / length, z / length];
+		let length = Math.sqrt(this.vectorDot([v[0], v[1], v[2]], [v[0], v[1], v[2]]));
+		return [v[0] / length, v[1] / length, v[2] / length];
 	}
 
 	// Generate 3D view matrix
-	public static view3D(eyeX: number, eyeY: number, eyeZ: number,
-		atX: number, atY: number, atZ: number,
-		upX: number, upY: number, upZ: number): readonly number[]
+	public static view3D(eye: Vector3, at: Vector3, up: Vector3): Matrix4
 	{
-		let z = this.vectorNormalize(eyeX - atX, eyeY - atY, eyeZ - atZ);
-		let crossZ = this.vectorCross(upX, upY, upZ, z[0], z[1], z[2]);
-		let x = this.vectorNormalize(crossZ[0], crossZ[1], crossZ[2]);
-		let y = this.vectorCross(z[0], z[1], z[2], x[0], x[1], x[2]);
+		let z = this.vectorNormalize([eye[0] - at[0], eye[1] - at[1], eye[2] - at[2]]);
+		let crossZ = this.vectorCross([up[0], up[1], up[2]], [z[0], z[1], z[2]]);
+		let x = this.vectorNormalize([crossZ[0], crossZ[1], crossZ[2]]);
+		let y = this.vectorCross([z[0], z[1], z[2]], [x[0], x[1], x[2]]);
 
-		let xDotEye = -this.vectorDot(x[0], x[1], x[2], eyeX, eyeY, eyeZ);
-		let yDotEye = -this.vectorDot(y[0], y[1], y[2], eyeX, eyeY, eyeZ);
-		let zDotEye = -this.vectorDot(z[0], z[1], z[2], eyeX, eyeY, eyeZ);
+		let xDotEye = -this.vectorDot([x[0], x[1], x[2]], [eye[0], eye[1], eye[2]]);
+		let yDotEye = -this.vectorDot([y[0], y[1], y[2]], [eye[0], eye[1], eye[2]]);
+		let zDotEye = -this.vectorDot([z[0], z[1], z[2]], [eye[0], eye[1], eye[2]]);
 
 		return [
 			x[0], x[1], x[2], 0,
@@ -101,35 +99,33 @@ export class Matrix
 	}
 
 	// Generate 2D view matrix
-	public static view2D(x: number, y: number): readonly number[]
+	public static view2D(view: Vector2): Matrix4
 	{
 		return [
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
-			x, y, 0, 1
+			view[0], view[1], 0, 1
 		];
 	}
 
 	// Generate 3D model matrix
-	public static model3D(transX: number, transY: number, transZ: number,
-		rotateX: number, rotateY: number, rotateZ: number,
-		scaleX: number, scaleY: number, scaleZ: number): readonly number[]
+	public static model3D(translate: Vector3, rotate: Vector3, scale: Vector3): Matrix4
 	{
-		let sinX = Math.sin(rotateX);
-		let cosX = Math.cos(rotateX);
-		let sinY = Math.sin(rotateY);
-		let cosY = Math.cos(rotateY);
-		let sinZ = Math.sin(rotateZ);
-		let cosZ = Math.cos(rotateZ);
+		let sinX = Math.sin(rotate[0]);
+		let cosX = Math.cos(rotate[0]);
+		let sinY = Math.sin(rotate[1]);
+		let cosY = Math.cos(rotate[1]);
+		let sinZ = Math.sin(rotate[2]);
+		let cosZ = Math.cos(rotate[2]);
 
 		// Translate
 		let matrix = [
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
-			transX, transY, transZ, 1,
-		];
+			translate[0], translate[1], translate[2], 1,
+		] as Matrix4;
 
 		// Rotate X
 		matrix = this.multiply(matrix, [
@@ -157,9 +153,9 @@ export class Matrix
 
 		// Scale
 		matrix = this.multiply(matrix, [
-			scaleX, 0, 0, 0,
-			0, scaleY, 0, 0,
-			0, 0, scaleZ, 0,
+			scale[0], 0, 0, 0,
+			0, scale[1], 0, 0,
+			0, 0, scale[2], 0,
 			0, 0, 0, 1,
 		]);
 
@@ -167,8 +163,7 @@ export class Matrix
 	}
 
 	// Generate 2D model matrix
-	public static model2D(transX: number, transY: number, rotate: number,
-		scaleX: number, scaleY: number): readonly number[]
+	public static model2D(translate: Vector2, rotate: number, scale: Vector2): Matrix4
 	{
 		let sin = Math.sin(rotate);
 		let cos = Math.cos(rotate);
@@ -178,8 +173,8 @@ export class Matrix
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
-			transX, transY, 0, 1,
-		];
+			translate[0], translate[1], 0, 1,
+		] as Matrix4;
 
 		// Rotate
 		matrix = this.multiply(matrix, [
@@ -191,8 +186,8 @@ export class Matrix
 
 		// Scale
 		matrix = this.multiply(matrix, [
-			scaleX, 0, 0, 0,
-			0, scaleY, 0, 0,
+			scale[0], 0, 0, 0,
+			0, scale[1], 0, 0,
 			0, 0, 1, 0,
 			0, 0, 0, 1,
 		]);

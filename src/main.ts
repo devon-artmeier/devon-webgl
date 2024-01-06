@@ -42,41 +42,10 @@ precision highp float;
 
 in vec2 texCoord;
 out vec4 fragColor;
-uniform float time;
-
-vec3 hsvToRGB(vec3 c)
-{
-	vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-	vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-	return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
 
 void main(void)
 {
-	fragColor = vec4(hsvToRGB(vec3(radians(time / 100.0) + 0.9, 1, 1)), 1);
-}
-`;
-
-// Fragment shader base code 3
-const fragShaderCode3 = 
-`#version 300 es
-precision highp float;
-
-in vec2 texCoord;
-out vec4 fragColor;
-uniform sampler2D txt;
-uniform float time;
-
-vec3 hsvToRGB(vec3 c)
-{
-	vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-	vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-	return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-
-void main(void)
-{
-	fragColor = texture(txt, texCoord) * vec4(hsvToRGB(vec3(radians(time / 100.0), 1, 1)), 1);
+	fragColor = vec4(0.2666, 0, 1, 1);
 }
 `;
 
@@ -153,7 +122,6 @@ function createContext(contextName: string, canvasID: string)
 
 	DGL.Shader.create("shader_main", vertexShaderCode, fragShaderCode);
 	DGL.Shader.create("shader_main2", vertexShaderCode, fragShaderCode2);
-	DGL.Shader.create("shader_main3", vertexShaderCode, fragShaderCode3);
 
 	DGL.Mesh.createStatic("mesh_cube", cubeVertices, elementsCube);
 
@@ -168,28 +136,27 @@ function renderContext(contextName: string, time: number)
 {
 	DGL.Context.bind(contextName);
 	
+	DGL.Context.enableDepth();
+	DGL.Context.setStencilMask(0xFF);
+	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
+	
 	///////////////////////////////////////////////////////////////
 	
 	DGL.Framebuffer.bind("fbo");
 	
-	DGL.Context.enableDepth();
 	DGL.Context.setViewport(0, 0, 256, 256);
-	DGL.Context.disableScissor();
-	DGL.Context.clear(DGL.Color.FromRGBA(1, 0, 1, 1));
+	DGL.Context.clear([0.1333, 0, 0.5, 1]);
 
 	let perspective = DGL. Matrix.perspective(60, 256, 256, 0.1, 1000);
 
-	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
-	DGL.Context.setStencilMask(0xFF);
-
 	let angle = radians(time / 25);
-	let model = DGL.Matrix.model3D(0, 0, 0, angle, angle, angle, 1, 1, 1);
+	let model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);
 	
 	let x = Math.cos(radians(time / 4)) * 256;
 	let y = Math.sin(radians(time / 4)) * 256;
 	let z = Math.sin(radians((time / 8))) * 200;
 
-	let view = DGL.Matrix.view3D(x, y, 64 + z, 0, 0, 0, 0, 1, 0);
+	let view = DGL.Matrix.view3D([x, y, 64 + z], [0, 0, 0], [0, 1, 0]);
 
 	DGL.Shader.setUniformTexture("shader_main", "txt", 0);
 	DGL.Shader.setUniformMatrix4fv("shader_main", "model", model);
@@ -205,23 +172,19 @@ function renderContext(contextName: string, time: number)
 	///////////////////////////////////////////////////////////////
 	
 	DGL.Context.setViewport(0, 0, 640, 480);
-	DGL.Context.clear(DGL.Color.FromRGBA(0, 0, 0, 1));
+	DGL.Context.clear([0, 0, 0, 1]);
 	
 	perspective = DGL.Matrix.perspective(60, 640, 480, 0.1, 1000);
-	
-	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
-	DGL.Context.setStencilMask(0xFF)
 
 	angle = radians(time / 25);
-	model = DGL.Matrix.model3D(0, 0, 0, angle, angle, angle, 1, 1, 1);
+	model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);
 
-	view = DGL.Matrix.view3D(x, y, 256 + z, 0, 0, 0, 0, 1, 0);
+	view = DGL.Matrix.view3D([x, y, 256 + z], [0, 0, 0], [0, 1, 0]);
 
-	DGL.Shader.setUniformTexture("shader_main3", "txt", 0);
-	DGL.Shader.setUniformMatrix4fv("shader_main3", "model", model);
-	DGL.Shader.setUniformMatrix4fv("shader_main3", "view", view);
-	DGL.Shader.setUniformMatrix4fv("shader_main3", "projection", perspective);
-	DGL.Shader.setUniform1f("shader_main3", "time", time);
+	DGL.Shader.setUniformTexture("shader_main", "txt", 0);
+	DGL.Shader.setUniformMatrix4fv("shader_main", "model", model);
+	DGL.Shader.setUniformMatrix4fv("shader_main", "view", view);
+	DGL.Shader.setUniformMatrix4fv("shader_main", "projection", perspective);
 
 	DGL.Shader.bind("shader_main3");
 	DGL.Framebuffer.setActiveTexture(0, "fbo");
@@ -229,23 +192,19 @@ function renderContext(contextName: string, time: number)
 	
 	///////////////////////////////////////////////////////////////
 	
+	DGL.Context.disableDepth();
 	DGL.Context.setStencilFunction(DGL.Condition.NotEqual, 1, 0xFF);
 	DGL.Context.setStencilMask(0x00);
-	DGL.Context.disableDepth();
 
 	angle = radians(time / 25);
-	model = DGL.Matrix.model3D(0, 0, 0, angle, angle, angle, 1.1, 1.1, 1.1);
+	model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1.1, 1.1, 1.1]);
 	
 	DGL.Shader.setUniformMatrix4fv("shader_main2", "model", model);
 	DGL.Shader.setUniformMatrix4fv("shader_main2", "view", view);
 	DGL.Shader.setUniformMatrix4fv("shader_main2", "projection", perspective);
-	DGL.Shader.setUniform1f("shader_main2", "time", time);
 
 	DGL.Shader.bind("shader_main2");
 	DGL.Mesh.draw("mesh_cube");
-	
-	DGL.Context.setStencilMask(0xFF);
-	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
 }
 
 function render(time: number)

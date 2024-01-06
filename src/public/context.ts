@@ -1,4 +1,4 @@
-import { Color } from "./color";
+import { Vector4 } from "../private/tuples";
 import { Condition, StencilOption } from "./enums";
 import { Resource } from "../private/resource";
 import { ResourceManager } from "../private/resource-manager";
@@ -55,12 +55,12 @@ export class Context extends Resource
 	}
 	
 	// Clear
-	public static clear(color: Color)
+	public static clear(color: Vector4)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
 			let gl = context.gl;
-			gl.clearColor(color.r, color.g, color.b, color.a);
+			gl.clearColor(color[0], color[1], color[2], color[3]);
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 		}
 	}
