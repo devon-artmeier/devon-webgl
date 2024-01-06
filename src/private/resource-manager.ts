@@ -82,12 +82,6 @@ export class ResourceManager
 		return this._bind == resource;
 	}
 
-	// Check if bind is set
-	public checkBindSet()
-	{
-		return this._bind != null;
-	}
-	
 	// Rebind
 	public rebind()
 	{

@@ -24,11 +24,7 @@ export class Resource
 	{
 		if (this._tempBind) {
 			this._tempBind = false;
-			if (this._manager.checkBindSet()) {
-				this._manager.rebind();
-			} else {
-				this.unbind();
-			}
+			this._manager?.rebind();
 		}
 	}
 	

@@ -15,41 +15,34 @@ export class WebGLMath
 		return angle * (180 / Math.PI);
 	}
 	
-	// Generate blank matrix
-	public static blankMatrix()
-	{
-		return new Matrix([
-			[1, 0, 0, 0],
-			[0, 1, 0, 0],
-			[0, 0, 1, 0],
-			[0, 0, 0, 1]
-		]);
-	}
-	
 	// Generate orthographic projection matrix 
-	public static orthoMatrix(l: number, r: number, t: number, b: number, n: number, f: number): Matrix
+	public static ortho(left: number, right: number, top: number, bottom: number,
+		near: number, far: number): Float32Array
 	{
-		return new Matrix([
-			[2/(r-l), 0, 0, 0],
-			[0, 2/(t-b), 0, 0],
-			[0, 0, -2/(f-n), 0],
-			[-(r+l)/(r-l), -(t+b)/(t-b), 0, 1]]);
+		return new Float32Array([
+			2 / (right - left), 0, 0, 0,
+			0, 2 / (top - bottom), 0, 0,
+			0, 0, -2 / (far - near), 0,
+			-(right + left) / (right - left), -(top + bottom) / (top - bottom), 0, 1
+		]);
 	}
 
 	// Generate perspective projection matrix
-	public static perspectiveMatrix(fov: number, w: number, h: number, n: number, f: number): Matrix
+	public static perspective(fov: number, width: number, height: number,
+		near: number, far: number): Float32Array
 	{
-		let ft = Math.tan(this.degToRad(fov)/2);
-		return new Matrix([
-			[1/((w/h)*ft), 0, 0, 0],
-			[0, 1/ft, 0, 0],
-			[0, 0, -(f+n)/(f-n), -1],
-			[0, 0, -(2*f*n)/(f-n), 0]]);
+		let fovTan = Math.tan(this.degToRad(fov)/2);
+		return new Float32Array([
+			1 / ((width / height) * fovTan), 0, 0, 0,
+			0, 1 / fovTan, 0, 0,
+			0, 0, -(far + near) / (far - near), -1,
+			0, 0, -(2 * far * near) / (far - near), 0
+		]);
 	}
 
-	// Generate "look at" view matrix
-	public static lookAtMatrix(eyeX: number, eyeY: number, eyeZ: number,
-		atX: number, atY: number, atZ: number, upX: number, upY: number, upZ: number)
+	// Generate 3D view matrix
+	public static view3D(eyeX: number, eyeY: number, eyeZ: number,
+		atX: number, atY: number, atZ: number, upX: number, upY: number, upZ: number): Float32Array
 	{
 		let eye = new Vector3([eyeX, eyeY, eyeZ]);
 		let at = new Vector3([atX, atY, atZ]);
@@ -59,117 +52,111 @@ export class WebGLMath
 		let x = up.cross(z).normalize();
 		let	y = z.cross(x);
 
-		return new Matrix([
-			[x.v[0], x.v[1], x.v[2], 0],
-			[y.v[0], y.v[1], y.v[2], 0],
-			[z.v[0], z.v[1], z.v[2], 0],
-			[-x.dot(eye), -y.dot(eye), -z.dot(eye), 1]
+		return new Float32Array([
+			x.v[0], x.v[1], x.v[2], 0,
+			y.v[0], y.v[1], y.v[2], 0,
+			z.v[0], z.v[1], z.v[2], 0,
+			-x.dot(eye), -y.dot(eye), -z.dot(eye), 1
 		]);
 	}
 
-	// Generate translation matrix
-	public static translateMatrix(x: number, y: number, z: number): Matrix
+	// Generate 2D view matrix
+	public static view2D(x: number, y: number): Float32Array
 	{
-		return new Matrix([
+		return new Float32Array([
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			x, y, 0, 1
+		]);
+	}
+
+	// Generate 3D model matrix
+	public static model3D(transX: number, transY: number, transZ: number,
+		rotateX: number, rotateY: number, rotateZ: number,
+		scaleX: number, scaleY: number, scaleZ: number): Float32Array
+	{
+		let sinX = Math.sin(rotateX);
+		let cosX = Math.cos(rotateX);
+		let sinY = Math.sin(rotateY);
+		let cosY = Math.cos(rotateY);
+		let sinZ = Math.sin(rotateZ);
+		let cosZ = Math.cos(rotateZ);
+
+		// Translate
+		let matrix = new Matrix([
 			[1, 0, 0, 0],
 			[0, 1, 0, 0],
 			[0, 0, 1, 0],
-			[x, y, z, 1],
+			[transX, transY, transZ, 1],
 		]);
-	}
 
-	// Generate 2D translation matrix
-	public static translate2DMatrix(x: number, y: number)
-	{
-		return this.translateMatrix(x, y, 0);	
-	}
-
-	// Generate X rotation matrix
-	public static rotateXMatrix(angle: number): Matrix
-	{
-		let s = Math.sin(angle);
-		let c = Math.cos(angle);
-
-		return new Matrix([
-			[1,  0,  0,  0],
-			[0,  c,  s,  0],
-			[0, -s,  c,  0],
-			[0,  0,  0,  1],
-		]);
-	}
-
-	// Generate Y rotation matrix
-	public static rotateYMatrix(angle: number): Matrix
-	{
-		let s = Math.sin(angle);
-		let c = Math.cos(angle);
-
-		return new Matrix([
-			[c,  0, -s,  0],
-			[0,  1,  0,  0],
-			[s,  0,  c,  0],
-			[0,  0,  0,  1],
-		]);
-	}
-
-	// Generate Z rotation matrix
-	public static rotateZMatrix(angle: number): Matrix
-	{
-		let s = Math.sin(angle);
-		let c = Math.cos(angle);
-
-		return new Matrix([
-			[ c,  s,  0,  0],
-			[-s,  c,  0,  0],
-			[ 0,  0,  1,  0],
-			[ 0,  0,  0,  1],
-		]);
-	}
-
-	// Generate rotation matrix
-	public static rotateMatrix(x: number, y: number, z: number): Matrix
-	{
-		return this.rotateZMatrix(z).multiply(this.rotateYMatrix(y).multiply(this.rotateXMatrix(x)));
-	}
-
-	// Generate 2D rotation matrix
-	public static rotate2DMatrix(angle: number)
-	{
-		return this.rotateZMatrix(angle);	
-	}
-
-	// Generate scale matrix
-	public static scaleMatrix(x: number, y: number, z: number)
-	{
-		return new Matrix([
-			[x, 0, 0, 0],
-			[0, y, 0, 0],
-			[0, 0, z, 0],
+		// Rotate X
+		matrix = matrix.multiply(new Matrix([
+			[1, 0, 0, 0],
+			[0, cosX, sinX, 0],
+			[0, -sinX, cosX, 0],
 			[0, 0, 0, 1],
+		]));
+
+		// Rotate Y
+		matrix = matrix.multiply(new Matrix([
+			[cosY, 0, -sinY, 0],
+			[0, 1, 0, 0],
+			[sinY, 0, cosY, 0],
+			[0, 0, 0, 1],
+		]));
+
+		// Rotate Z
+		matrix = matrix.multiply(new Matrix([
+			[cosZ, sinZ, 0, 0],
+			[-sinZ, cosZ, 0, 0],
+			[0, 0, 1, 0],
+			[0, 0, 0, 1],
+		]));
+
+		// Scale
+		matrix = matrix.multiply(new Matrix([
+			[scaleX, 0, 0, 0],
+			[0, scaleY, 0, 0],
+			[0, 0, scaleZ, 0],
+			[0, 0, 0, 1],
+		]));
+
+		return matrix.flat();
+	}
+
+	// Generate 2D model matrix
+	public static model2D(transX: number, transY: number, rotate: number,
+		scaleX: number, scaleY: number): Float32Array
+	{
+		let sin = Math.sin(rotate);
+		let cos = Math.cos(rotate);
+
+		// Translate
+		let matrix = new Matrix([
+			[1, 0, 0, 0],
+			[0, 1, 0, 0],
+			[0, 0, 1, 0],
+			[transX, transY, 0, 1],
 		]);
-	}
 
-	// Generate X scale matrix
-	public static scaleXMatrix(x: number)
-	{
-		return this.scaleMatrix(x, 1, 1);
-	}
+		// Rotate
+		matrix = matrix.multiply(new Matrix([
+			[cos, sin, 0, 0],
+			[-sin, cos, 0, 0],
+			[0, 0, 1, 0],
+			[0, 0, 0, 1],
+		]));
 
-	// Generate Y scale matrix
-	public static scaleYMatrix(y: number)
-	{
-		return this.scaleMatrix(1, y, 1);
-	}
+		// Scale
+		matrix = matrix.multiply(new Matrix([
+			[scaleX, 0, 0, 0],
+			[0, scaleY, 0, 0],
+			[0, 0, 1, 0],
+			[0, 0, 0, 1],
+		]));
 
-	// Generate Z scale matrix
-	public static scaleZMatrix(z: number)
-	{
-		return this.scaleMatrix(1, 1, z);
-	}
-
-	// Generate 2D scale matrix
-	public static scale2DMatrix(x: number, y: number)
-	{
-		return this.scaleMatrix(x, y, 1);	
+		return matrix.flat();
 	}
 }
