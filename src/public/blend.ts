@@ -1,25 +1,23 @@
 import { ContextCollection } from "../private/context-collection";
 
-export enum BlendFunc
-{
-	Zero,
-	One,
-	SrcColor,
-	OneMinusSrcColor,
-	DestColor,
-	OneMinusDestColor,
-	SrcAlpha,
-	OneMinusSrcAlpha,
-	DestAlpha,
-	OneMinusDestAlpha,
-	ConstantColor,
-	OneMinusConstantColor,
-	ConstantAlpha,
-	OneMinusConstantAlpha
-}
-
 export class Blend
 {
+	// Functions
+	public static readonly Zero = 0;
+	public static readonly One = 1;
+	public static readonly SrcColor = 2;
+	public static readonly OneMinusSrcColor = 3;
+	public static readonly DestColor = 4;
+	public static readonly OneMinusDestColor = 5;
+	public static readonly SrcAlpha = 6;
+	public static readonly OneMinusSrcAlpha = 7;
+	public static readonly DestAlpha = 8;
+	public static readonly OneMinusDestAlpha = 9;
+	public static readonly ConstantColor = 10;
+	public static readonly OneMinusConstantColor = 11;
+	public static readonly ConstantAlpha = 12;
+	public static readonly OneMinusConstantAlpha = 13;
+
 	// Enable blending
 	public static enable()
 	{
@@ -41,7 +39,7 @@ export class Blend
 	}
 
 	// Get blend function
-	private static getFunction(func: BlendFunc): number
+	private static getFunction(func: number): number
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
@@ -58,7 +56,7 @@ export class Blend
 	}
 	
 	// Set blend function
-	public static setFunction(sfunc: BlendFunc, dfunc: BlendFunc)
+	public static setFunction(sfunc: number, dfunc: number)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
@@ -68,7 +66,7 @@ export class Blend
 	}
 	
 	// Set separate blend functions
-	public static setFunctionSeparate(srgb: BlendFunc, drgb: BlendFunc, salpha: BlendFunc, dalpha: BlendFunc)
+	public static setFunctionSeparate(srgb: number, drgb: number, salpha: number, dalpha: number)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {

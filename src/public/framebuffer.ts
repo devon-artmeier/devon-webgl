@@ -1,26 +1,26 @@
 import { Vector2 } from "./tuples";
-import { Filter, Wrap } from "./enums";
 import { Resource } from "../private/resource";
 import { Context } from "./context";
 import { ContextCollection } from "../private/context-collection";
+import { Texture } from "./texture";
 
 export class Framebuffer extends Resource
 {
 	private _buffer: WebGLFramebuffer;
 	private _texture: WebGLTexture;
 	private _depth: WebGLTexture;
-	private _filter: Vector2<Filter> = [Filter.Bilinear, Filter.Bilinear];
-	private _wrap: Vector2<Wrap> = [Wrap.Repeat, Wrap.Repeat];
+	private _filter: Vector2<number> = [Texture.Bilinear, Texture.Bilinear];
+	private _wrap: Vector2<number> = [Texture.Repeat, Texture.Repeat];
 	
 	get size(): Vector2<number> { return [this._size[0], this._size[1]]; }
 	get width(): number { return this._size[0]; }
 	get height(): number { return this._size[1]; }
-	get filter(): Vector2<Filter> { return this._filter; }
-	get minFilter(): Filter { return this._filter[0]; }
-	get magFilter(): Filter { return this._filter[1]; }
-	get wrap(): Vector2<Wrap> { return this._wrap; }
-	get wrapX(): Wrap { return this._wrap[0]; }
-	get wrapY(): Wrap { return this._wrap[1]; }
+	get filter(): Vector2<number> { return this._filter; }
+	get minFilter(): number { return this._filter[0]; }
+	get magFilter(): number { return this._filter[1]; }
+	get wrap(): Vector2<number> { return this._wrap; }
+	get wrapX(): number { return this._wrap[0]; }
+	get wrapY(): number { return this._wrap[1]; }
 	
 	/**************************/
 	/* CLASS OBJECT FUNCTIONS */
@@ -105,20 +105,20 @@ export class Framebuffer extends Resource
 	}
 	
 	// Set filter
-	public setFilter(filter: Filter)
+	public setFilter(filter: number)
 	{
 		this.setMinFilter(filter);
 		this.setMagFilter(filter);
 	}
 
 	// Set minification filter
-	public setMinFilter(filter: Filter)
+	public setMinFilter(filter: number)
 	{
 		let gl = this._context.gl;
 		this.bindTexture();
 		this._filter[0] = filter;
 
-		if (filter == Filter.Bilinear) {
+		if (filter == Texture.Bilinear) {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		} else {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -126,13 +126,13 @@ export class Framebuffer extends Resource
 	}
 
 	// Set magnification filter
-	public setMagFilter(filter: Filter)
+	public setMagFilter(filter: number)
 	{
 		let gl = this._context.gl;
 		this.bindTexture();
 		this._filter[1] = filter;
 
-		if (filter == Filter.Bilinear) {
+		if (filter == Texture.Bilinear) {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		} else {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -140,21 +140,21 @@ export class Framebuffer extends Resource
 	}
 	
 	// Get wrap mode
-	private getWrapMode(mode: Wrap): number
+	private getWrapMode(mode: number): number
 	{
 		let gl = this._context.gl;
 		return [gl.CLAMP_TO_EDGE, gl.REPEAT, gl.MIRRORED_REPEAT][mode];
 	}
 	
 	// Set wrap mode
-	public setWrap(mode: Wrap)
+	public setWrap(mode: number)
 	{
 		this.setWrapX(mode);
 		this.setWrapY(mode);
 	}
 	
 	// Set horizontal wrap mode
-	public setWrapX(mode: Wrap)
+	public setWrapX(mode: number)
 	{
 		let gl = this._context.gl;
 		this.bindTexture();
@@ -164,7 +164,7 @@ export class Framebuffer extends Resource
 	}
 	
 	// Set vertical wrap mode
-	public setWrapY(mode: Wrap)
+	public setWrapY(mode: number)
 	{
 		let gl = this._context.gl;
 		this.bindTexture();
@@ -238,37 +238,37 @@ export class Framebuffer extends Resource
 	}
 	
 	// Get filter
-	public static getFilter(fboID: string): Vector2<Filter>
+	public static getFilter(fboID: string): Vector2<number>
 	{
 		return this.getFBO(fboID)?.filter;
 	}
 	
 	// Get minification filter
-	public static getMinFilter(fboID: string): Filter
+	public static getMinFilter(fboID: string): number
 	{
 		return this.getFBO(fboID)?.minFilter;
 	}
 	
 	// Get magnification filter
-	public static getMagFilter(fboID: string): Filter
+	public static getMagFilter(fboID: string): number
 	{
 		return this.getFBO(fboID)?.magFilter;
 	}
 
 	// Get wrap modes
-	public static getWrap(fboID: string): Vector2<Wrap>
+	public static getWrap(fboID: string): Vector2<number>
 	{
 		return this.getFBO(fboID)?.wrap;
 	}
 	
 	// Get horizontal wrap mode
-	public static getWrapX(fboID: string): Wrap
+	public static getWrapX(fboID: string): number
 	{
 		return this.getFBO(fboID)?.wrapX;
 	}
 	
 	// Get vertical wrap mode
-	public static getWrapY(fboID: string): Wrap
+	public static getWrapY(fboID: string): number
 	{
 		return this.getFBO(fboID)?.wrapY;
 	}
@@ -292,37 +292,37 @@ export class Framebuffer extends Resource
 	}
 	
 	// Set filter
-	public static setFilter(fboID: string, filter: Filter)
+	public static setFilter(fboID: string, filter: number)
 	{
 		this.getFBO(fboID)?.setFilter(filter);
 	}
 	
 	// Set minification filter
-	public static setMinFilter(fboID: string, filter: Filter)
+	public static setMinFilter(fboID: string, filter: number)
 	{
 		this.getFBO(fboID)?.setMinFilter(filter);
 	}
 	
 	// Set magnification filter
-	public static setMagFilter(fboID: string, filter: Filter)
+	public static setMagFilter(fboID: string, filter: number)
 	{
 		this.getFBO(fboID)?.setMagFilter(filter);
 	}
 	
 	// Set wrap mode
-	public static setWrap(fboID: string, mode: Wrap)
+	public static setWrap(fboID: string, mode: number)
 	{
 		this.getFBO(fboID)?.setWrap(mode);
 	}
 	
 	// Set horizontal wrap mode
-	public static setWrapX(fboID: string, mode: Wrap)
+	public static setWrapX(fboID: string, mode: number)
 	{
 		this.getFBO(fboID)?.setWrapX(mode);
 	}
 	
 	// Set vertical wrap mode
-	public static setWrapY(fboID: string, mode: Wrap)
+	public static setWrapY(fboID: string, mode: number)
 	{
 		this.getFBO(fboID)?.setWrapY(mode);
 	}

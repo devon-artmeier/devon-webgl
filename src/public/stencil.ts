@@ -1,20 +1,26 @@
-import { Condition } from "./enums";
 import { ContextCollection } from "../private/context-collection";
-
-export enum StencilOption
-{
-	Keep,
-	Zero,
-	Replace,
-	Increase,
-	IncreaseWrap,
-	Decrease,
-	DecreaseWrap,
-	Invert
-}
 
 export class Stencil
 {
+	// Conditions
+	public static readonly Always = 0;
+	public static readonly Never = 1;
+	public static readonly Equal = 2;
+	public static readonly NotEqual = 3;
+	public static readonly Less = 4;
+	public static readonly LessEqual = 5;
+	public static readonly Greater = 6;
+	public static readonly GreaterEqual = 7;
+
+	// Options
+	public static readonly Keep = 0;
+	public static readonly Zero = 1;
+	public static readonly Replace = 2;
+	public static readonly Increase = 3;
+	public static readonly IncreaseWrap = 4;
+	public static readonly Decrease = 5;
+	public static readonly DecreaseWrap = 6;
+	public static readonly Invert = 7;
 
 	// Enable stencil testing
 	public static enable()
@@ -37,7 +43,7 @@ export class Stencil
 	}
 
 	// Set stencil function
-	public static setFunction(func: Condition, ref: number, mask: number)
+	public static setFunction(func: number, ref: number, mask: number)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
@@ -50,7 +56,7 @@ export class Stencil
 	}
 
 	// Set stencil options
-	public static setOptions(sfail: StencilOption, dpfail: StencilOption, dppass: StencilOption)
+	public static setOptions(sfail: number, dpfail: number, dppass: number)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {

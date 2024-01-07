@@ -1,7 +1,6 @@
 export * from "./blend"
 export * from "./context"
 export * from "./depth"
-export * from "./enums";
 export * from "./framebuffer";
 export * from "./matrix"
 export * from "./mesh";

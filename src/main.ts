@@ -114,11 +114,11 @@ function createContext(contextName: string, canvasID: string)
 	DGL.Context.bind(contextName);
 	
 	DGL.Blend.enable();
-	DGL.Blend.setFunction(DGL.BlendFunc.SrcAlpha, DGL.BlendFunc.OneMinusSrcAlpha);
+	DGL.Blend.setFunction(DGL.Blend.SrcAlpha, DGL.Blend.OneMinusSrcAlpha);
 	
 	DGL.Texture.create("texture_test");
-	DGL.Texture.setFilter("texture_test", DGL.Filter.Nearest);
-	DGL.Texture.setWrap("texture_test",  DGL.Wrap.Clamp);
+	DGL.Texture.setFilter("texture_test", DGL.Texture.Nearest);
+	DGL.Texture.setWrap("texture_test",  DGL.Texture.Clamp);
 	DGL.Texture.loadImage("texture_test", "./img/test.png");
 
 	DGL.Shader.create("shader_main", vertexShaderCode, fragShaderCode);
@@ -127,12 +127,12 @@ function createContext(contextName: string, canvasID: string)
 	DGL.Mesh.createStatic("mesh_cube", cubeVertices, elementsCube);
 
 	DGL.Framebuffer.create("fbo", [256, 256]);
-	DGL.Framebuffer.setFilter("fbo", DGL.Filter.Nearest);
+	DGL.Framebuffer.setFilter("fbo", DGL.Texture.Nearest);
 
-	DGL.Depth.setFunction(DGL.Condition.LessEqual);
+	DGL.Depth.setFunction(DGL.Depth.LessEqual);
 
 	DGL.Stencil.enable();
-	DGL.Stencil.setOptions(DGL.StencilOption.Keep, DGL.StencilOption.Keep, DGL.StencilOption.Replace);
+	DGL.Stencil.setOptions(DGL.Stencil.Keep, DGL.Stencil.Keep, DGL.Stencil.Replace);
 }
 
 function renderContext(contextName: string, time: number)
@@ -141,7 +141,7 @@ function renderContext(contextName: string, time: number)
 	
 	DGL.Depth.enable();
 	DGL.Stencil.setMask(0xFF);
-	DGL.Stencil.setFunction(DGL.Condition.Always, 1, 0xFF);
+	DGL.Stencil.setFunction(DGL.Stencil.Always, 1, 0xFF);
 	
 	///////////////////////////////////////////////////////////////
 	
@@ -196,7 +196,7 @@ function renderContext(contextName: string, time: number)
 	///////////////////////////////////////////////////////////////
 	
 	DGL.Depth.disable();
-	DGL.Stencil.setFunction(DGL.Condition.NotEqual, 1, 0xFF);
+	DGL.Stencil.setFunction(DGL.Stencil.NotEqual, 1, 0xFF);
 	DGL.Stencil.setMask(0x00);
 
 	angle = radians(time / 25);
