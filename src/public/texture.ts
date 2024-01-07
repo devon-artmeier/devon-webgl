@@ -1,14 +1,16 @@
 import { Vector2, Vector4 } from "./tuples";
 import { Resource } from "../private/resource";
 import { Context } from "./context";
-import { ContextCollection } from "../private/context-collection";
+import { ContextPool } from "../private/context-pool";
 
 export class Texture extends Resource
 {
 	private _texture: WebGLTexture;
-	private _size: Vector2<number> = [1, 1];
 	private _filter: Vector2<number> = [Texture.Bilinear, Texture.Bilinear];
 	private _wrap: Vector2<number> = [Texture.Repeat, Texture.Repeat];
+
+	private _fbo: WebGLFramebuffer;
+	private _depthBuffer: WebGLTexture;
 	
 	get size(): Vector2<number> { return [this._size[0], this._size[1]]; }
 	get width(): number { return this._size[0]; }
@@ -34,10 +36,13 @@ export class Texture extends Resource
 	/**************************/
 	
 	// Constructor
-	private constructor(context: Context, id: string)
+	private constructor(context: Context, id: string, private _size: Vector2<number>)
 	{
 		super(context, id);
 		let gl = this._context.gl;
+
+		if (this._size[0] <= 0) this._size[0] = 1;
+		if (this._size[1] <= 0) this._size[1] = 1;
 
 		this._texture = gl.createTexture();
 		this.bind();
@@ -46,15 +51,18 @@ export class Texture extends Resource
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0],this. _size[1], 0,
+			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._size[0] * this._size[1] * 4));
 	}
 	
 	// Bind
 	public bind()
 	{
-		if (this._context.textures.currentBind != this) {
+		if (this._context.binds.get("texture") != this) {
 			let gl = this._context.gl;
 			gl.bindTexture(gl.TEXTURE_2D, this._texture);
-			this._context.textures.currentBind = this;
+			this._context.binds.set("texture", this);
 		}
 	}
 	
@@ -72,11 +80,12 @@ export class Texture extends Resource
 		this.bind();
 		this._filter[0] = filter;
 
-		if (filter == Texture.Bilinear) {
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-		} else {
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
-		}
+		let filters = [
+			gl.NEAREST, gl.LINEAR,
+			gl.NEAREST_MIPMAP_LINEAR, gl.LINEAR_MIPMAP_LINEAR,
+		];
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+			filters[filter + (this._fbo == null ? 2 : 0)]);
 	}
 
 	// Set magnification filter
@@ -86,11 +95,10 @@ export class Texture extends Resource
 		this.bind();
 		this._filter[1] = filter;
 
-		if (filter == Texture.Bilinear) {
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		} else {
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		}
+		let filters = [
+			gl.NEAREST, gl.LINEAR
+		];
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filters[filter]);
 	}
 	
 	// Get wrap mode
@@ -125,6 +133,38 @@ export class Texture extends Resource
 
 		this._wrap[1] = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(mode));
+	}
+
+	// Set as render target
+	public setRenderTarget()
+	{
+		let gl = this._context.gl;
+
+		if (this._fbo == null) {
+			// Not created
+			this._fbo = gl.createFramebuffer();
+			this._depthBuffer = gl.createTexture();
+
+			gl.bindTexture(gl.TEXTURE_2D, this._depthBuffer);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._size[0], this._size[1], 0,
+				gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
+				
+			gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+				gl.TEXTURE_2D, this._texture, 0);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT,
+				gl.TEXTURE_2D, this._depthBuffer, 0);
+
+			this._context.binds.set("texture", null);
+			this.setMinFilter(this._filter[0]);
+		} else {
+			// Created
+			if (this._context.binds.get("framebuffer") != this) {
+				gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo);
+			}
+		}
+		
+		this._context.binds.set("framebuffer", this);
 	}
 	
 	// Generate with color
@@ -170,7 +210,9 @@ export class Texture extends Resource
 	public delete()
 	{
 		let gl = this._context.gl;
-		gl.deleteTexture(this._texture);
+		if (this._texture != null) gl.deleteTexture(this._texture);
+		if (this._fbo != null) gl.deleteTexture(this._fbo);
+		if (this._depthBuffer != null) gl.deleteTexture(this._depthBuffer);
 	}
 	
 	/********************/
@@ -180,15 +222,15 @@ export class Texture extends Resource
 	// Get texture
 	private static getTexture(textureID: string): Texture
 	{
-		return ContextCollection.getBind()?.textures.get(textureID) as Texture;
+		return ContextPool.getBind()?.textures.get(textureID) as Texture;
 	}
 
 	// Create
-	public static create(textureID: string)
+	public static create(textureID: string, size: Vector2<number> = [1, 1])
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
-			let texture = new Texture(context, textureID);
+			let texture = new Texture(context, textureID, size);
 			context.textures.add(textureID, texture);
 		}
 	}
@@ -286,12 +328,29 @@ export class Texture extends Resource
 	// Set active texture number
 	public static setActive(num: number, textureID: string)
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			gl.activeTexture(gl.TEXTURE1 + num);
 			this.getTexture(textureID)?.bind();
 			gl.activeTexture(gl.TEXTURE0);
+		}
+	}
+
+	// Set render target
+	public static setRenderTarget(textureID: string)
+	{
+		this.getTexture(textureID)?.setRenderTarget();
+	}
+
+	// Unset render target
+	public static unsetRenderTarget()
+	{
+		let context = ContextPool.getBind();
+		if (context != null) {
+			let gl = context.gl;
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			context.binds.set("framebuffer", null);
 		}
 	}
 	
@@ -310,12 +369,12 @@ export class Texture extends Resource
 	// Delete
 	public static delete(textureID: string)
 	{
-		ContextCollection.getBind().textures.delete(textureID);
+		ContextPool.getBind().textures.delete(textureID);
 	}
 	
 	// Delete all textures
 	public static clear()
 	{
-		ContextCollection.getBind().textures.clear();
+		ContextPool.getBind().textures.clear();
 	}
 }

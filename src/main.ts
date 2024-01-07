@@ -118,13 +118,13 @@ function createContext(contextName: string, canvasID: string)
 	
 	DGL.Texture.create("texture_test");
 	DGL.Texture.loadImage("texture_test", "./img/test.png");
+	
+	DGL.Texture.create("texture_fbo", [256, 256]);
 
 	DGL.Shader.create("shader_main", vertexShaderCode, fragShaderCode);
 	DGL.Shader.create("shader_main2", vertexShaderCode, fragShaderCode2);
 
 	DGL.Mesh.createStatic("mesh_cube", cubeVertices, cubeElements);
-
-	DGL.Framebuffer.create("fbo_cube", [256, 256]);
 
 	DGL.Stencil.enable();
 	DGL.Stencil.setOptions(DGL.Stencil.Keep, DGL.Stencil.Keep, DGL.Stencil.Replace);
@@ -144,7 +144,7 @@ function renderContext(contextName: string, time: number)
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Framebuffer.bind("fbo_cube");
+	DGL.Texture.setRenderTarget("texture_fbo");
 	
 	DGL.Cull.enable();
 	
@@ -173,7 +173,7 @@ function renderContext(contextName: string, time: number)
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Framebuffer.unbind();
+	DGL.Texture.unsetRenderTarget();
 
 	DGL.Viewport.set([0, 0], [640, 480]);
 	DGL.Context.clear([0, 0, 0.5, 1]);
@@ -215,7 +215,7 @@ function renderContext(contextName: string, time: number)
 		DGL.Cull.enable();
 
 		DGL.Shader.bind("shader_main");
-		DGL.Framebuffer.setActiveTexture(0, "fbo_cube");
+		DGL.Texture.setActive(0, "texture_fbo");
 		DGL.Shader.setMatrix4("model", model);
 		DGL.Mesh.draw("mesh_cube");
 		

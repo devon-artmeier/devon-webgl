@@ -1,7 +1,7 @@
 import { Matrix2, Matrix3, Matrix4, Vector2, Vector3, Vector4 } from "./tuples";
 import { Resource } from "../private/resource";
 import { Context } from "./context";
-import { ContextCollection } from "../private/context-collection";
+import { ContextPool } from "../private/context-pool";
 
 export class Shader extends Resource
 {
@@ -37,10 +37,10 @@ export class Shader extends Resource
 	// Bind
 	public bind()
 	{
-		if (this._context.shaders.currentBind != this) {
+		if (this._context.binds.get("shader") != this) {
 			let gl = this._context.gl;
 			gl.useProgram(this._program);
-			this._context.shaders.currentBind = this;
+			this._context.binds.set("shader", this);
 		}
 	}
 	
@@ -148,13 +148,13 @@ export class Shader extends Resource
 	// Get shader
 	private static getShader(): Shader
 	{
-		return ContextCollection.getBind()?.shaders.currentBind as Shader;
+		return ContextPool.getBind()?.binds.get("shader") as Shader;
 	}
 	
 	// Create
 	public static create(shaderID: string, vertexCode: string, fragCode: string)
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let shader = new Shader(context, shaderID, vertexCode, fragCode);
 			context.shaders.add(shaderID, shader);
@@ -164,17 +164,17 @@ export class Shader extends Resource
 	// Bind
 	public static bind(shaderID: string)
 	{
-		return ContextCollection.getBind()?.shaders.get(shaderID)?.bind();
+		return ContextPool.getBind()?.shaders.get(shaderID)?.bind();
 	}
 	
 	// Unbind
 	public static unbind()
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			gl.useProgram(null);
-			context.shaders.currentBind = null;
+			context.binds.set("shader", null);
 		}
 	}
 	
@@ -263,12 +263,12 @@ export class Shader extends Resource
 	// Delete
 	public static delete(shaderID: string)
 	{
-		ContextCollection.getBind()?.shaders.delete(shaderID);
+		ContextPool.getBind()?.shaders.delete(shaderID);
 	}
 	
 	// Delete all shaders
 	public static clear()
 	{
-		ContextCollection.getBind()?.shaders.clear();
+		ContextPool.getBind()?.shaders.clear();
 	}
 }

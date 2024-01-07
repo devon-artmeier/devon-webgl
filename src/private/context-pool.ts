@@ -1,7 +1,7 @@
 import { ResourceManager } from "./resource-manager";
 import { Context } from "../public/context";
 
-export class ContextCollection
+export class ContextPool
 {
 	public static readonly contexts = new ResourceManager();
 	private static _bind: Context = null;

@@ -3,8 +3,6 @@ import { Resource } from "./resource";
 // Resource manager class
 export class ResourceManager
 {
-	public currentBind: Resource;
-	
 	private _pool = new Map<string, Resource>();
 	
 	// Add resource to pool

@@ -1,6 +1,6 @@
 import { Resource } from "../private/resource";
 import { Context } from "./context";
-import { ContextCollection } from "../private/context-collection";
+import { ContextPool } from "../private/context-pool";
 import { Vertex } from "./vertex";
 
 export class Mesh<T extends Vertex> extends Resource
@@ -245,13 +245,13 @@ export class Mesh<T extends Vertex> extends Resource
 	// Get mesh
 	private static getMesh(meshID: string): Mesh<Vertex>
 	{
-		return ContextCollection.getBind()?.meshes.get(meshID) as Mesh<Vertex>;
+		return ContextPool.getBind()?.meshes.get(meshID) as Mesh<Vertex>;
 	}
 
 	// Create static mesh
 	public static createStatic<T extends Vertex>(meshID: string, vertices: Array<T>, elements?: number[])
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let mesh = new Mesh<T>(context, meshID, false);
 			context.meshes.add(meshID, mesh);
@@ -268,7 +268,7 @@ export class Mesh<T extends Vertex> extends Resource
 	// Create dynamic mesh
 	public static createDynamic<T extends Vertex>(meshID: string)
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let mesh = new Mesh<T>(context, meshID, true);
 			context.meshes.add(meshID, mesh);
@@ -348,12 +348,12 @@ export class Mesh<T extends Vertex> extends Resource
 	// Delete
 	public static delete(meshID: string)
 	{
-		ContextCollection.getBind()?.meshes.delete(meshID);
+		ContextPool.getBind()?.meshes.delete(meshID);
 	}
 	
 	// Delete all vertex buffers
 	public static clear()
 	{
-		ContextCollection.getBind()?.meshes.clear();
+		ContextPool.getBind()?.meshes.clear();
 	}
 }

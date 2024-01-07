@@ -2,7 +2,6 @@ export * from "./blend"
 export * from "./context"
 export * from "./culling"
 export * from "./depth"
-export * from "./framebuffer";
 export * from "./matrix"
 export * from "./mesh";
 export * from "./scissor"

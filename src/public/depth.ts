@@ -1,4 +1,4 @@
-import { ContextCollection } from "../private/context-collection";
+import { ContextPool } from "../private/context-pool";
 
 export class Depth
 {
@@ -15,7 +15,7 @@ export class Depth
 	// Enable depth
 	public static enable()
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			gl.enable(gl.DEPTH_TEST);
@@ -25,7 +25,7 @@ export class Depth
 	// Disable depth
 	public static disable()
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			gl.disable(gl.DEPTH_TEST);
@@ -35,7 +35,7 @@ export class Depth
 	// Clear depth buffer
 	public static clear()
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -45,7 +45,7 @@ export class Depth
 	// Set depth function
 	public static setFunction(func: number)
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			gl.depthFunc([
@@ -58,7 +58,7 @@ export class Depth
 	// Set depth mask
 	public static setMask(enable: boolean)
 	{
-		let context = ContextCollection.getBind();
+		let context = ContextPool.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			gl.depthMask(enable);
