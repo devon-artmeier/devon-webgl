@@ -1,12 +1,12 @@
 // Texture filter modes
-export enum TextureFilter
+export enum Filter
 {
 	Nearest,
 	Bilinear
 }
 
 // Texture wrap modes
-export enum TextureWrap
+export enum Wrap
 {
 	Clamp,
 	Repeat,

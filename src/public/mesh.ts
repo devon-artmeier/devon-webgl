@@ -123,13 +123,13 @@ export class Mesh<T extends Vertex> extends Resource
 	}
 
 	// Set array of vertices
-	public setVertexArray(newVertices: readonly T[], offset: number, init: boolean)
+	public setVertexArray(newVertices: T[], offset: number, init: boolean)
 	{
 		this.setData(newVertices, this._vertices, offset, init);
 	}
 
 	// Set array of elements
-	public setElementArray(newElements: readonly number[], offset: number, init: boolean)
+	public setElementArray(newElements: number[], offset: number, init: boolean)
 	{
 		this.setData(newElements, this._elements, offset, init);
 	}
@@ -249,7 +249,7 @@ export class Mesh<T extends Vertex> extends Resource
 	}
 
 	// Create static mesh
-	public static createStatic<T extends Vertex>(meshID: string, vertices: ReadonlyArray<T>, elements?: readonly number[])
+	public static createStatic<T extends Vertex>(meshID: string, vertices: Array<T>, elements?: number[])
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
@@ -288,13 +288,13 @@ export class Mesh<T extends Vertex> extends Resource
 	}
 
 	// Set array of vertices (for dynamic meshes)
-	public static setVertexArray(meshID: string, newVertices: readonly Vertex[], offset: number)
+	public static setVertexArray(meshID: string, newVertices: Vertex[], offset: number)
 	{
 		this.getMesh(meshID)?.setVertexArray(newVertices, offset, false);
 	}
 
 	// Set array of elements (for dynamic meshes)
-	public static setElementArray(meshID: string, newElements: readonly number[], offset: number)
+	public static setElementArray(meshID: string, newElements: number[], offset: number)
 	{
 		this.getMesh(meshID)?.setElementArray(newElements, offset, false);
 	}

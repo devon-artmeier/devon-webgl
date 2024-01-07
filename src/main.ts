@@ -116,8 +116,8 @@ function createContext(contextName: string, canvasID: string)
 	DGL.Context.enableBlend();
 	
 	DGL.Texture.create("texture_test");
-	DGL.Texture.setFilter("texture_test", DGL.TextureFilter.Bilinear);
-	DGL.Texture.setWrap("texture_test",  DGL.TextureWrap.Clamp, DGL.TextureWrap.Clamp);
+	DGL.Texture.setFilter("texture_test", DGL.Filter.Nearest);
+	DGL.Texture.setWrap("texture_test",  DGL.Wrap.Clamp);
 	DGL.Texture.loadImage("texture_test", "./img/test.png");
 
 	DGL.Shader.create("shader_main", vertexShaderCode, fragShaderCode);
@@ -125,7 +125,8 @@ function createContext(contextName: string, canvasID: string)
 
 	DGL.Mesh.createStatic("mesh_cube", cubeVertices, elementsCube);
 
-	DGL.Framebuffer.create("fbo", 256, 256);
+	DGL.Framebuffer.create("fbo", [256, 256]);
+	DGL.Framebuffer.setFilter("fbo", DGL.Filter.Nearest);
 
 	DGL.Context.enableDepth();
 	DGL.Context.enableStencil();
@@ -144,10 +145,10 @@ function renderContext(contextName: string, time: number)
 	
 	DGL.Framebuffer.bind("fbo");
 	
-	DGL.Context.setViewport(0, 0, 256, 256);
+	DGL.Context.setViewport([0, 0], [256, 256]);
 	DGL.Context.clear([0.1333, 0, 0.5, 1]);
 
-	let perspective = DGL. Matrix.perspective(60, 256, 256, 0.1, 1000);
+	let perspective = DGL. Matrix.perspective(60, [256, 256], [0.1, 1000]);
 
 	let angle = radians(time / 25);
 	let model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);
@@ -171,10 +172,10 @@ function renderContext(contextName: string, time: number)
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Context.setViewport(0, 0, 640, 480);
+	DGL.Context.setViewport([0, 0], [640, 480]);
 	DGL.Context.clear([0, 0, 0, 1]);
 	
-	perspective = DGL.Matrix.perspective(60, 640, 480, 0.1, 1000);
+	perspective = DGL.Matrix.perspective(60, [640, 480], [0.1, 1000]);
 
 	angle = radians(time / 25);
 	model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);

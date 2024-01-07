@@ -5,4 +5,5 @@ export * from "./matrix"
 export * from "./mesh";
 export * from "./shader"
 export * from "./texture"
+export * from "./tuples";
 export * from "./vertex";

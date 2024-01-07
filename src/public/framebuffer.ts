@@ -1,4 +1,5 @@
-import { TextureFilter, TextureWrap } from "./enums";
+import { Vector2 } from "./tuples";
+import { Filter, Wrap } from "./enums";
 import { Resource } from "../private/resource";
 import { Context } from "./context";
 import { ContextCollection } from "../private/context-collection";
@@ -8,26 +9,32 @@ export class Framebuffer extends Resource
 	private _buffer: WebGLFramebuffer;
 	private _texture: WebGLTexture;
 	private _depth: WebGLTexture;
-	private _filter: TextureFilter = TextureFilter.Bilinear;
-	private _wrapX: TextureWrap = TextureWrap.Repeat;
-	private _wrapY: TextureWrap = TextureWrap.Repeat;
+	private _filter: Vector2<Filter> = [Filter.Bilinear, Filter.Bilinear];
+	private _wrap: Vector2<Wrap> = [Wrap.Repeat, Wrap.Repeat];
 	
-	get width(): number { return this._width; }
-	get height(): number { return this._height; }
-	get filter(): TextureFilter { return this._filter; }
-	get wrapX(): TextureWrap { return this._wrapX; }
-	get wrapY(): TextureWrap { return this._wrapY; }
+	get size(): Vector2<number> { return [this._size[0], this._size[1]]; }
+	get width(): number { return this._size[0]; }
+	get height(): number { return this._size[1]; }
+	get filter(): Vector2<Filter> { return this._filter; }
+	get minFilter(): Filter { return this._filter[0]; }
+	get magFilter(): Filter { return this._filter[1]; }
+	get wrap(): Vector2<Wrap> { return this._wrap; }
+	get wrapX(): Wrap { return this._wrap[0]; }
+	get wrapY(): Wrap { return this._wrap[1]; }
 	
 	/**************************/
 	/* CLASS OBJECT FUNCTIONS */
 	/**************************/
 	
 	// Constructor
-	private constructor(context: Context, id: string, private _width: number, private _height: number)
+	private constructor(context: Context, id: string, private _size: Vector2<number>)
 	{
 		super(context, id);
 		let gl = this._context.gl;
-		
+
+		if (_size[0] <= 0) _size[0] = 1;
+		if (_size[1] <= 0) _size[1] = 1;
+
 		this._buffer = gl.createFramebuffer();
 		this._texture = gl.createTexture();
 		this._depth = gl.createTexture();
@@ -37,11 +44,12 @@ export class Framebuffer extends Resource
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._width, this._height, 0,
-			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._width * this._height * 4));
+
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0], this._size[1], 0,
+			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._size[0] * this._size[1] * 4));
 			
 		gl.bindTexture(gl.TEXTURE_2D, this._depth);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._width, this._height, 0,
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._size[0], this._size[1], 0,
 			gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
 		
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._buffer);
@@ -73,71 +81,96 @@ export class Framebuffer extends Resource
 		}
 	}
 	
-	// Set filter
-	public setFilter(filter: TextureFilter)
+	// Set size
+	public setSize(size: Vector2<number>)
 	{
 		let gl = this._context.gl;
 		this.bindTexture();
-		this._filter = filter;
+		this._size = size;
 
-		if (this._filter == TextureFilter.Bilinear) {
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0], this._size[1], 0,
+			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._size[0] * this._size[1] * 4));
+	}
+
+	// Set width
+	public setWidth(width: number)
+	{
+		this.setSize([width, this.size[1]]);
+	}
+
+	// Set height
+	public setHeight(height: number)
+	{
+		this.setSize([this.size[0], height]);
+	}
+	
+	// Set filter
+	public setFilter(filter: Filter)
+	{
+		this.setMinFilter(filter);
+		this.setMagFilter(filter);
+	}
+
+	// Set minification filter
+	public setMinFilter(filter: Filter)
+	{
+		let gl = this._context.gl;
+		this.bindTexture();
+		this._filter[0] = filter;
+
+		if (filter == Filter.Bilinear) {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		} else {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		}
+	}
+
+	// Set magnification filter
+	public setMagFilter(filter: Filter)
+	{
+		let gl = this._context.gl;
+		this.bindTexture();
+		this._filter[1] = filter;
+
+		if (filter == Filter.Bilinear) {
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		} else {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		}
 	}
 	
 	// Get wrap mode
-	private getWrapMode(mode: TextureWrap): number
+	private getWrapMode(mode: Wrap): number
 	{
 		let gl = this._context.gl;
 		return [gl.CLAMP_TO_EDGE, gl.REPEAT, gl.MIRRORED_REPEAT][mode];
 	}
 	
+	// Set wrap mode
+	public setWrap(mode: Wrap)
+	{
+		this.setWrapX(mode);
+		this.setWrapY(mode);
+	}
+	
 	// Set horizontal wrap mode
-	public setWrapX(mode: TextureWrap)
+	public setWrapX(mode: Wrap)
 	{
 		let gl = this._context.gl;
 		this.bindTexture();
 
-		this._wrapX = mode;
+		this._wrap[0] = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(mode));
 	}
 	
 	// Set vertical wrap mode
-	public setWrapY(mode: TextureWrap)
+	public setWrapY(mode: Wrap)
 	{
 		let gl = this._context.gl;
 		this.bindTexture();
 
-		this._wrapY = mode;
+		this._wrap[1] = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(mode));
-	}
-	
-	// Set wrap modes
-	public setWrap(modeX: TextureWrap, modeY: TextureWrap)
-	{
-		let gl = this._context.gl;
-		this.bindTexture();
-
-		this._wrapX = modeX;
-		this._wrapY = modeY;
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(modeX));
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(modeY));
-	}
-	
-	// Resize
-	public resize(width: number, height: number)
-	{
-		let gl = this._context.gl;
-		this.bindTexture();
-
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0,
-			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4));
-		this._width = width;
-		this._height = height;
 	}
 	
 	// Delete
@@ -160,11 +193,11 @@ export class Framebuffer extends Resource
 	}
 
 	// Create
-	public static create(fboID: string, width: number, height: number)
+	public static create(fboID: string, size: Vector2<number>)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
-			let fbo = new Framebuffer(context, fboID, width, height);
+			let fbo = new Framebuffer(context, fboID, size);
 			context.fbos.add(fboID, fbo);
 		}
 	}
@@ -185,6 +218,12 @@ export class Framebuffer extends Resource
 			context.fbos.currentBind = null;
 		}
 	}
+
+	// Get size
+	public static getSize(fboID: string): Vector2<number>
+	{
+		return this.getFBO(fboID)?.size;
+	}
 	
 	// Get width
 	public static getWidth(fboID: string): number
@@ -199,45 +238,93 @@ export class Framebuffer extends Resource
 	}
 	
 	// Get filter
-	public static getFilter(fboID: string): TextureFilter
+	public static getFilter(fboID: string): Vector2<Filter>
 	{
-		return this.getFBO(fboID)?.height;
+		return this.getFBO(fboID)?.filter;
+	}
+	
+	// Get minification filter
+	public static getMinFilter(fboID: string): Filter
+	{
+		return this.getFBO(fboID)?.minFilter;
+	}
+	
+	// Get magnification filter
+	public static getMagFilter(fboID: string): Filter
+	{
+		return this.getFBO(fboID)?.magFilter;
+	}
+
+	// Get wrap modes
+	public static getWrap(fboID: string): Vector2<Wrap>
+	{
+		return this.getFBO(fboID)?.wrap;
 	}
 	
 	// Get horizontal wrap mode
-	public static getWrapX(fboID: string): TextureWrap
+	public static getWrapX(fboID: string): Wrap
 	{
 		return this.getFBO(fboID)?.wrapX;
 	}
 	
 	// Get vertical wrap mode
-	public static getWrapY(fboID: string): TextureWrap
+	public static getWrapY(fboID: string): Wrap
 	{
 		return this.getFBO(fboID)?.wrapY;
 	}
 	
+	// Set size
+	public static setSize(fboID: string, size: Vector2<number>)
+	{
+		this.getFBO(fboID)?.setSize(size);
+	}
+
+	// Set width
+	public static setWidth(fboID: string, width: number)
+	{
+		this.getFBO(fboID)?.setWidth(width);
+	}
+
+	// Set height
+	public static setHeight(fboID: string, height: number)
+	{
+		this.getFBO(fboID)?.setHeight(height);
+	}
+	
 	// Set filter
-	public static setFilter(fboID: string, filter: TextureFilter)
+	public static setFilter(fboID: string, filter: Filter)
 	{
 		this.getFBO(fboID)?.setFilter(filter);
 	}
 	
-	// Set horizontal wrap mode
-	public static setWrapX(fboID: string, wrap: TextureWrap)
+	// Set minification filter
+	public static setMinFilter(fboID: string, filter: Filter)
 	{
-		this.getFBO(fboID)?.setWrapX(wrap);
+		this.getFBO(fboID)?.setMinFilter(filter);
+	}
+	
+	// Set magnification filter
+	public static setMagFilter(fboID: string, filter: Filter)
+	{
+		this.getFBO(fboID)?.setMagFilter(filter);
+	}
+	
+	// Set wrap mode
+	public static setWrap(fboID: string, mode: Wrap)
+	{
+		this.getFBO(fboID)?.setWrap(mode);
+	}
+	
+	// Set horizontal wrap mode
+	public static setWrapX(fboID: string, mode: Wrap)
+	{
+		this.getFBO(fboID)?.setWrapX(mode);
 	}
 	
 	// Set vertical wrap mode
-	public static setWrapY(fboID: string, wrap: TextureWrap)
+	public static setWrapY(fboID: string, mode: Wrap)
 	{
-		this.getFBO(fboID)?.setWrapY(wrap);
-	}
-	
-	// Set wrap modes
-	public static setWrap(fboID: string, wrapX: TextureWrap, wrapY: TextureWrap)
-	{
-		this.getFBO(fboID)?.setWrap(wrapX, wrapY);
+		this.getFBO(fboID)?.setWrapY(mode);
 	}
 	
 	// Set active texture number
@@ -250,12 +337,6 @@ export class Framebuffer extends Resource
 			this.getFBO(fboID)?.bindTexture();
 			gl.activeTexture(gl.TEXTURE0);
 		}
-	}
-	
-	// Resize
-	public static resize(fboID: string, width: number, height: number)
-	{
-		this.getFBO(fboID)?.resize(width, height);
 	}
 	
 	// Delete

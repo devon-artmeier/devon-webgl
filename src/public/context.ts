@@ -1,4 +1,4 @@
-import { Vector4 } from "../private/tuples";
+import { Vector2, Vector4 } from "./tuples";
 import { Condition, StencilOption } from "./enums";
 import { Resource } from "../private/resource";
 import { ResourceManager } from "../private/resource-manager";
@@ -55,23 +55,23 @@ export class Context extends Resource
 	}
 	
 	// Clear
-	public static clear(color: Vector4)
+	public static clear(color: Vector4<number>)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
 			let gl = context.gl;
-			gl.clearColor(color[0], color[1], color[2], color[3]);
+			gl.clearColor(... color);
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 		}
 	}
 
 	// Set viewport
-	public static setViewport(x: number, y: number, width: number, height: number)
+	public static setViewport(pos: Vector2<number>, res: Vector2<number>)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
 			let gl = context.gl;
-			gl.viewport(x, y, width, height);
+			gl.viewport(... pos, ... res);
 		}
 	}
 
@@ -228,13 +228,13 @@ export class Context extends Resource
 	}
 
 	// Set scissor test region
-	public static setScissor(x: number, y: number, width: number, height: number)
+	public static setScissor(pos: Vector2<number>, res: Vector2<number>)
 	{
 		let context = ContextCollection.getBind();
 		if (context != null) {
 			let gl = context.gl;
 			let viewport = this.getViewport();
-			gl.scissor(x, viewport[3] - height - y, width, height);
+			gl.scissor(pos[0], viewport[3] - pos[1] - pos[0], ... res);
 		}
 	}
 	
