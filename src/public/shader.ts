@@ -43,21 +43,6 @@ export class Shader extends Resource
 			this._context.shaders.currentBind = this;
 		}
 	}
-
-	// Temporary bind
-	public tempBind()
-	{
-		if (this._context.shaders.currentBind != this) {
-			let gl = this._context.gl;
-			gl.useProgram(this._program);
-		}
-	}
-
-	// Temporary unbind
-	public tempUnbind()
-	{
-		this._context.shaders.currentBind?.bind();
-	}
 	
 	// Get uniform attribute location
 	private getUniformLocation(name: string): WebGLUniformLocation
@@ -69,99 +54,77 @@ export class Shader extends Resource
 	public setFloat(name: string, v0: number)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform1f(this.getUniformLocation(name), v0);
-		this.tempUnbind();
 	}
 	
 	// Set 1D integer value uniform attribute
 	public setInt(name: string, v0: number)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform1i(this.getUniformLocation(name), v0);
-		this.tempUnbind();
 	}
 	
 	// Set 2D float array uniform attribute
 	public setVec2(name: string, val: Vector2<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform2fv(this.getUniformLocation(name), val);
-		this.tempUnbind();
 	}
 
 	// Set 2D integer array uniform attribute
 	public setIVec2(name: string, val: Vector2<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform2iv(this.getUniformLocation(name), val);
-		this.tempUnbind();
 	}
 	
 	// Set 3D float array uniform attribute
 	public setVec3(name: string, val: Vector3<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform3fv(this.getUniformLocation(name), val);
-		this.tempUnbind();
 	}
 	
 	// Set 3D integer array uniform attribute
 	public setIVec3(name: string, val: Vector3<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform3iv(this.getUniformLocation(name), val);
-		this.tempUnbind();
 	}
 	
 	// Set 4D float array uniform attribute
 	public setVec4(name: string, val: Vector4<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform4fv(this.getUniformLocation(name), val);
-		this.tempUnbind();
 	}
 	
 	// Set 4D integer array uniform attribute
 	public setIVec4(name: string, val: Vector4<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniform4iv(this.getUniformLocation(name), val);
-		this.tempUnbind();
 	}
 	
 	// Set 2-component matrix uniform attribute
 	public setMatrix2(name: string, val: Matrix2<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniformMatrix2fv(this.getUniformLocation(name), false, val);
-		this.tempUnbind();
 	}
 	
 	// Set 3-component matrix uniform attribute
 	public setMatrix3(name: string, val: Matrix3<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniformMatrix3fv(this.getUniformLocation(name), false, val);
-		this.tempUnbind();
 	}
 	
 	// Set 4-component matrix uniform attribute
 	public setMatrix4(name: string, val: Matrix4<number>)
 	{
 		let gl = this._context.gl;
-		this.tempBind();
 		gl.uniformMatrix4fv(this.getUniformLocation(name), false, val);
-		this.tempUnbind();
 	}
 	
 	// Get uniform attribute
@@ -183,9 +146,9 @@ export class Shader extends Resource
 	/********************/
 	
 	// Get shader
-	private static getShader(shaderID: string): Shader
+	private static getShader(): Shader
 	{
-		return ContextCollection.getBind()?.shaders.get(shaderID) as Shader;
+		return ContextCollection.getBind()?.shaders.currentBind as Shader;
 	}
 	
 	// Create
@@ -201,7 +164,7 @@ export class Shader extends Resource
 	// Bind
 	public static bind(shaderID: string)
 	{
-		return this.getShader(shaderID)?.bind();
+		return ContextCollection.getBind()?.shaders.get(shaderID)?.bind();
 	}
 	
 	// Unbind
@@ -216,87 +179,85 @@ export class Shader extends Resource
 	}
 	
 	// Set 1D float value uniform attribute
-	public static setFloat(shaderID: string, name: string, v0: number)
+	public static setFloat(name: string, v0: number)
 	{
-		this.getShader(shaderID)?.setFloat(name, v0);
+		this.getShader()?.setFloat(name, v0);
 	}
 	
 	// Set 1D integer value uniform attribute
-	public static setInt(shaderID: string, name: string, v0: number)
+	public static setInt(name: string, v0: number)
 	{
-		this.getShader(shaderID)?.setInt(name, v0);
+		this.getShader()?.setInt(name, v0);
 	}
 	
 	// Set 2D float array uniform attribute
-	public static setVec2(shaderID: string, name: string,
+	public static setVec2(name: string,
 		val: Vector2<number>)
 	{
-		this.getShader(shaderID)?.setVec2(name, val);
+		this.getShader()?.setVec2(name, val);
 	}
 
 	// Set 2D integer array uniform attribute
-	public static setIVec2v(shaderID: string, name: string,
-		val: Vector2<number>)
+	public static setIVec2v(name: string, val: Vector2<number>)
 	{
-		this.getShader(shaderID)?.setIVec2(name, val);
+		this.getShader()?.setIVec2(name, val);
 	}
 	
 	// Set 3D float array uniform attribute
-	public static setVec3v(shaderID: string, name: string,
-		val: Vector3<number>)
+	public static setVec3v(name: string, val: Vector3<number>)
 	{
-		this.getShader(shaderID)?.setVec3(name, val);
+		this.getShader()?.setVec3(name, val);
 	}
 	
 	// Set 3D integer array uniform attribute
-	public static setIVec3v(shaderID: string, name: string,
+	public static setIVec3v(name: string,
 		val: Vector3<number>)
 	{
-		this.getShader(shaderID)?.setIVec3(name, val);
+		this.getShader()?.setIVec3(name, val);
 	}
 	
 	// Set 4D float array uniform attribute
-	public static setVec4(shaderID: string, name: string,
+	public static setVec4(name: string,
 		val: Vector4<number>)
 	{
-		this.getShader(shaderID)?.setVec4(name, val);
+		this.getShader()?.setVec4(name, val);
 	}
 	
 	// Set 4D integer array uniform attribute
-	public static setIVec4(shaderID: string, name: string,
+	public static setIVec4(name: string,
 		val: Vector4<number>)
 	{
-		this.getShader(shaderID)?.setIVec4(name, val);
+		this.getShader()?.setIVec4(name, val);
 	}
 	
 	// Set 2-component matrix uniform attribute
-	public static setMatrix2(shaderID: string, name: string, val: Matrix2<number>)
+	public static setMatrix2(name: string, val: Matrix2<number>)
 	{
-		this.getShader(shaderID)?.setMatrix2(name, val);
+		this.getShader()?.setMatrix2(name, val);
 	}
 	
 	// Set 3-component matrix uniform attribute
-	public static setMatrix3(shaderID: string, name: string, val: Matrix3<number>)
+	public static setMatrix3(name: string, val: Matrix3<number>)
 	{
-		this.getShader(shaderID)?.setMatrix3(name, val);
+		this.getShader()?.setMatrix3(name, val);
 	}
 	
 	// Set 4-component matrix uniform attribute
-	public static setMatrix4(shaderID: string, name: string, val: Matrix4<number>)
+	public static setMatrix4(name: string, val: Matrix4<number>)
 	{
-		this.getShader(shaderID)?.setMatrix4(name, val);
+		this.getShader()?.setMatrix4(name, val);
 	}
 
 	// Set texture uniform attribute
-	public static setTexture(shaderID: string, name: string, num: number)
+	public static setTexture(name: string, num: number)
 	{
-		this.getShader(shaderID)?.setInt(name, num + 1);
+		this.getShader()?.setInt(name, num + 1);
 	}
 	
 	// Get uniform attribute
-	public static getUniform(shaderID: string, name: string)
+	public static getUniform(name: string)
 	{
-		this.getShader(shaderID)?.getUniform(name);
+		this.getShader()?.getUniform(name);
 	}
 	
 	// Delete

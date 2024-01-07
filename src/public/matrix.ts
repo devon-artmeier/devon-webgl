@@ -37,7 +37,7 @@ export class Matrix
 	}
 
 	// Multiply matrix
-	private static multiply(a: Matrix4<number>, b: Matrix4<number>): Matrix4<number>
+	public static multiply(a: Matrix4<number>, b: Matrix4<number>): Matrix4<number>
 	{
 		return [
 			(a[0] * b[0] ) + (a[4] * b[1] ) + (a[8]  * b[2] ) + (a[12] * b[3] ),
@@ -112,89 +112,148 @@ export class Matrix
 		];
 	}
 
-	// Generate 3D model matrix
-	public static model3D(translate: Vector3<number>, rotate: Vector3<number>, scale: Vector3<number>): Matrix4<number>
+	// Generate 3D translation matrix
+	public static translate(translate: Vector3<number>): Matrix4<number>
 	{
-		let sinX = Math.sin(rotate[0]);
-		let cosX = Math.cos(rotate[0]);
-		let sinY = Math.sin(rotate[1]);
-		let cosY = Math.cos(rotate[1]);
-		let sinZ = Math.sin(rotate[2]);
-		let cosZ = Math.cos(rotate[2]);
-
-		// Translate
-		let matrix = [
+		return [
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
 			translate[0], translate[1], translate[2], 1,
-		] as Matrix4<number>;
+		];
+	}
 
-		// Rotate X
-		matrix = this.multiply(matrix, [
+	// Generate 2D translation matrix
+	public static translate2D(translate: Vector2<number>): Matrix4<number>
+	{
+		return this.translate([translate[0], translate[1], 0]);
+	}
+
+	// Generate X translation matrix
+	public static translateX(translate: number): Matrix4<number>
+	{
+		return this.translate([translate, 0, 0]);
+	}
+
+	// Generate Y translation matrix
+	public static translateY(translate: number): Matrix4<number>
+	{
+		return this.translate([0, translate, 0]);
+	}
+
+	// Generate Z translation matrix
+	public static translateZ(translate: number): Matrix4<number>
+	{
+		return this.translate([0, 0, translate]);
+	}
+
+	// Generate 3D rotation matrix
+	public static rotate(angles: Vector3<number>): Matrix4<number>
+	{
+		let matrix = this.rotateX(angles[0]);
+		matrix = this.multiply(matrix, this.rotateY(angles[1]));
+		matrix = this.multiply(matrix, this.rotateZ(angles[2]));
+		return matrix;
+	}
+
+	// Generate 2D rotation matrix
+	public static rotate2D(angle: number): Matrix4<number>
+	{
+		return this.rotateZ(angle);
+	}
+
+	// Generate 3D X rotation matrix
+	public static rotateX(angle: number): Matrix4<number>
+	{
+		let sin = Math.sin(angle);
+		let cos = Math.cos(angle);
+
+		return [
 			1, 0, 0, 0,
-			0, cosX, sinX, 0,
-			0, -sinX, cosX, 0,
+			0, cos, sin, 0,
+			0, -sin, cos, 0,
 			0, 0, 0, 1,
-		]);
+		];
+	}
 
-		// Rotate Y
-		matrix = this.multiply(matrix, [
-			cosY, 0, -sinY, 0,
+	// Generate 3D Y rotation matrix
+	public static rotateY(angle: number): Matrix4<number>
+	{
+		let sin = Math.sin(angle);
+		let cos = Math.cos(angle);
+
+		return [
+			cos, 0, -sin, 0,
 			0, 1, 0, 0,
-			sinY, 0, cosY, 0,
+			sin, 0, cos, 0,
 			0, 0, 0, 1,
-		]);
+		];
+	}
 
-		// Rotate Z
-		matrix = this.multiply(matrix, [
-			cosZ, sinZ, 0, 0,
-			-sinZ, cosZ, 0, 0,
+	// Generate 3D Z rotation matrix
+	public static rotateZ(angle: number): Matrix4<number>
+	{
+		let sin = Math.sin(angle);
+		let cos = Math.cos(angle);
+
+		return [
+			cos, sin, 0, 0,
+			-sin, cos, 0, 0,
 			0, 0, 1, 0,
 			0, 0, 0, 1,
-		]);
+		];
+	}
 
-		// Scale
-		matrix = this.multiply(matrix, [
+	// Generate 3D scale matrix
+	public static scale(scale: Vector3<number>): Matrix4<number>
+	{
+		return [
 			scale[0], 0, 0, 0,
 			0, scale[1], 0, 0,
 			0, 0, scale[2], 0,
 			0, 0, 0, 1,
-		]);
+		];
+	}
 
+	// Generate 2D scale matrix
+	public static scale2D(scale: Vector2<number>): Matrix4<number>
+	{
+		return this.scale([scale[0], scale[1], 1]);
+	}
+
+	// Generate X scale matrix
+	public static scaleX(scale: number): Matrix4<number>
+	{
+		return this.scale([scale, 1, 1]);
+	}
+
+	// Generate Y scale matrix
+	public static scaleY(scale: number): Matrix4<number>
+	{
+		return this.scale([1, scale, 1]);
+	}
+
+	// Generate Z scale matrix
+	public static scaleZ(scale: number): Matrix4<number>
+	{
+		return this.scale([1, 1, scale]);
+	}
+
+	// Generate 3D model matrix
+	public static model3D(translate: Vector3<number>, rotate: Vector3<number>, scale: Vector3<number>): Matrix4<number>
+	{
+		let matrix = this.translate(translate);
+		matrix = this.multiply(matrix, this.rotate(rotate));
+		matrix = this.multiply(matrix, this.scale(scale));
 		return matrix;
 	}
 
 	// Generate 2D model matrix
 	public static model2D(translate: Vector2<number>, rotate: number, scale: Vector2<number>): Matrix4<number>
 	{
-		let sin = Math.sin(rotate);
-		let cos = Math.cos(rotate);
-
-		// Translate
-		let matrix = [
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			translate[0], translate[1], 0, 1,
-		] as Matrix4<number>;
-
-		// Rotate
-		matrix = this.multiply(matrix, [
-			cos, sin, 0, 0,
-			-sin, cos, 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1,
-		]);
-
-		// Scale
-		matrix = this.multiply(matrix, [
-			scale[0], 0, 0, 0,
-			0, scale[1], 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1,
-		]);
-
+		let matrix = this.translate2D(translate);
+		matrix = this.multiply(matrix, this.rotate2D(rotate));
+		matrix = this.multiply(matrix, this.scale2D(scale));
 		return matrix;
 	}
 }
