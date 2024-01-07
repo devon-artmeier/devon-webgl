@@ -25,16 +25,3 @@ export enum Condition
 	Greater,
 	GreaterEqual
 }
-
-// Stencil action option
-export enum StencilOption
-{
-	Keep,
-	Zero,
-	Replace,
-	Increase,
-	IncreaseWrap,
-	Decrease,
-	DecreaseWrap,
-	Invert
-}

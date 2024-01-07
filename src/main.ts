@@ -113,7 +113,8 @@ function createContext(contextName: string, canvasID: string)
 	DGL.Context.create(contextName, document.getElementById(canvasID) as HTMLCanvasElement);
 	DGL.Context.bind(contextName);
 	
-	DGL.Context.enableBlend();
+	DGL.Blend.enable();
+	DGL.Blend.setFunction(DGL.BlendFunc.SrcAlpha, DGL.BlendFunc.OneMinusSrcAlpha);
 	
 	DGL.Texture.create("texture_test");
 	DGL.Texture.setFilter("texture_test", DGL.Filter.Nearest);
@@ -128,27 +129,28 @@ function createContext(contextName: string, canvasID: string)
 	DGL.Framebuffer.create("fbo", [256, 256]);
 	DGL.Framebuffer.setFilter("fbo", DGL.Filter.Nearest);
 
-	DGL.Context.enableDepth();
-	DGL.Context.enableStencil();
-	DGL.Context.setStencilOptions(DGL.StencilOption.Keep, DGL.StencilOption.Keep, DGL.StencilOption.Replace);
+	DGL.Depth.setFunction(DGL.Condition.LessEqual);
+
+	DGL.Stencil.enable();
+	DGL.Stencil.setOptions(DGL.StencilOption.Keep, DGL.StencilOption.Keep, DGL.StencilOption.Replace);
 }
 
 function renderContext(contextName: string, time: number)
 {
 	DGL.Context.bind(contextName);
 	
-	DGL.Context.enableDepth();
-	DGL.Context.setStencilMask(0xFF);
-	DGL.Context.setStencilFunction(DGL.Condition.Always, 1, 0xFF);
+	DGL.Depth.enable();
+	DGL.Stencil.setMask(0xFF);
+	DGL.Stencil.setFunction(DGL.Condition.Always, 1, 0xFF);
 	
 	///////////////////////////////////////////////////////////////
 	
 	DGL.Framebuffer.bind("fbo");
 	
-	DGL.Context.setViewport([0, 0], [256, 256]);
+	DGL.Viewport.set([0, 0], [256, 256]);
 	DGL.Context.clear([0.1333, 0, 0.5, 1]);
 
-	let perspective = DGL. Matrix.perspective(60, [256, 256], [0.1, 1000]);
+	let perspective = DGL.Matrix.perspective(60, [256, 256], [0.1, 1000]);
 
 	let angle = radians(time / 25);
 	let model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);
@@ -172,7 +174,7 @@ function renderContext(contextName: string, time: number)
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Context.setViewport([0, 0], [640, 480]);
+	DGL.Viewport.set([0, 0], [640, 480]);
 	DGL.Context.clear([0, 0, 0, 1]);
 	
 	perspective = DGL.Matrix.perspective(60, [640, 480], [0.1, 1000]);
@@ -193,9 +195,9 @@ function renderContext(contextName: string, time: number)
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Context.disableDepth();
-	DGL.Context.setStencilFunction(DGL.Condition.NotEqual, 1, 0xFF);
-	DGL.Context.setStencilMask(0x00);
+	DGL.Depth.disable();
+	DGL.Stencil.setFunction(DGL.Condition.NotEqual, 1, 0xFF);
+	DGL.Stencil.setMask(0x00);
 
 	angle = radians(time / 25);
 	model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1.1, 1.1, 1.1]);
