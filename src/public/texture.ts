@@ -45,7 +45,7 @@ export class Texture extends Resource
 		if (this._size[1] <= 0) this._size[1] = 1;
 
 		this._texture = gl.createTexture();
-		this.bind();
+		this._context.bindTexture(this._texture);
 		
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -54,16 +54,6 @@ export class Texture extends Resource
 
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0],this. _size[1], 0,
 			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._size[0] * this._size[1] * 4));
-	}
-	
-	// Bind
-	public bind()
-	{
-		if (this._context.binds.get("texture") != this) {
-			let gl = this._context.gl;
-			gl.bindTexture(gl.TEXTURE_2D, this._texture);
-			this._context.binds.set("texture", this);
-		}
 	}
 	
 	// Set filter
@@ -77,7 +67,7 @@ export class Texture extends Resource
 	public setMinFilter(filter: number)
 	{
 		let gl = this._context.gl;
-		this.bind();
+		this._context.bindTexture(this._texture);
 		this._filter[0] = filter;
 
 		let filters = [
@@ -92,7 +82,7 @@ export class Texture extends Resource
 	public setMagFilter(filter: number)
 	{
 		let gl = this._context.gl;
-		this.bind();
+		this._context.bindTexture(this._texture);
 		this._filter[1] = filter;
 
 		let filters = [
@@ -119,7 +109,7 @@ export class Texture extends Resource
 	public setWrapX(mode: number)
 	{
 		let gl = this._context.gl;
-		this.bind();
+		this._context.bindTexture(this._texture);
 
 		this._wrap[0] = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.getWrapMode(mode));
@@ -129,7 +119,7 @@ export class Texture extends Resource
 	public setWrapY(mode: number)
 	{
 		let gl = this._context.gl;
-		this.bind();
+		this._context.bindTexture(this._texture);
 
 		this._wrap[1] = mode;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.getWrapMode(mode));
@@ -141,30 +131,23 @@ export class Texture extends Resource
 		let gl = this._context.gl;
 
 		if (this._fbo == null) {
-			// Not created
 			this._fbo = gl.createFramebuffer();
 			this._depthBuffer = gl.createTexture();
 
-			gl.bindTexture(gl.TEXTURE_2D, this._depthBuffer);
+			this._context.bindTexture(this._depthBuffer);
 			gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._size[0], this._size[1], 0,
 				gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
 				
-			gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo);
+			this._context.bindFramebuffer(this._fbo);
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
 				gl.TEXTURE_2D, this._texture, 0);
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT,
 				gl.TEXTURE_2D, this._depthBuffer, 0);
 
-			this._context.binds.set("texture", null);
 			this.setMinFilter(this._filter[0]);
 		} else {
-			// Created
-			if (this._context.binds.get("framebuffer") != this) {
-				gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo);
-			}
+			this._context.bindFramebuffer(this._fbo);
 		}
-		
-		this._context.binds.set("framebuffer", this);
 	}
 	
 	// Generate with color
@@ -175,11 +158,12 @@ export class Texture extends Resource
 		};
 
 		let gl = this._context.gl;
-		this.bind();
+		this._context.bindTexture(this._texture);
 		
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
 			new Uint8Array([conv(color[0]), conv(color[1]), conv(color[2]), conv(color[3])]));
 		gl.generateMipmap(gl.TEXTURE_2D);
+		
 		this._size = [1, 1];
 	}
 	
@@ -209,10 +193,9 @@ export class Texture extends Resource
 	// Delete
 	public delete()
 	{
-		let gl = this._context.gl;
-		if (this._texture != null) gl.deleteTexture(this._texture);
-		if (this._fbo != null) gl.deleteTexture(this._fbo);
-		if (this._depthBuffer != null) gl.deleteTexture(this._depthBuffer);
+		this._context.deleteTexture(this._texture);
+		this._context.deleteFramebuffer(this._fbo);
+		this._context.deleteTexture(this._depthBuffer);
 	}
 	
 	/********************/
@@ -332,7 +315,7 @@ export class Texture extends Resource
 		if (context != null) {
 			let gl = context.gl;
 			gl.activeTexture(gl.TEXTURE1 + num);
-			this.getTexture(textureID)?.bind();
+			context.bindTexture(this.getTexture(textureID)?._texture);
 			gl.activeTexture(gl.TEXTURE0);
 		}
 	}
@@ -346,12 +329,7 @@ export class Texture extends Resource
 	// Unset render target
 	public static unsetRenderTarget()
 	{
-		let context = ContextPool.getBind();
-		if (context != null) {
-			let gl = context.gl;
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-			context.binds.set("framebuffer", null);
-		}
+		ContextPool.getBind()?.bindFramebuffer(null);
 	}
 	
 	// Generate with color

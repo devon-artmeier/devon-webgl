@@ -41,10 +41,11 @@ export class Mesh<T extends Vertex> extends Resource
 	{
 		if (this._vertices.length > 0) {
 			let gl = this._context.gl;
-			this._vbo = gl.createBuffer();
-			gl.bindVertexArray(this._vao);
 
-			gl.bindBuffer(gl.ARRAY_BUFFER, this._vbo);
+			this._vbo = gl.createBuffer();
+			this._context.bindVertexArray(this._vao);
+
+			this._context.bindVertexBuffer(this._vbo);
 			gl.bufferData(gl.ARRAY_BUFFER, this.getRawVertexData(),
 				this._dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
 
@@ -59,8 +60,8 @@ export class Mesh<T extends Vertex> extends Resource
 				offset += attribLen;
 			}
 
-			gl.bindVertexArray(null);
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			this._context.bindVertexArray(null);
+			this._context.bindVertexBuffer(null);
 		}
 			
 		this._prevVBOLen = this._vertices.length;
@@ -71,15 +72,16 @@ export class Mesh<T extends Vertex> extends Resource
 	{
 		if (this._elements.length > 0) {
 			let gl = this._context.gl;
-			this._ebo = gl.createBuffer();
-			gl.bindVertexArray(this._vao);
 
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._ebo);
+			this._ebo = gl.createBuffer();
+			this._context.bindVertexArray(this._vao);
+
+			this._context.bindElementBuffer(this._ebo);
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.getRawElementData(),
 				this._dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);	
 
-			gl.bindVertexArray(null);
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+			this._context.bindVertexArray(null);
+			this._context.bindElementBuffer(null);
 		}
 
 		this._prevEBOLen = this._elements.length;
@@ -157,7 +159,7 @@ export class Mesh<T extends Vertex> extends Resource
 			let gl = this._context.gl;
 				
 			if (this._elements.length > 0) {
-				gl.bindBuffer(gl.ARRAY_BUFFER, this._vbo);
+				this._context.bindVertexBuffer(this._vbo);
 				let data = this.getRawVertexData();
 
 				if (this._prevVBOLen == this._vertices.length) {
@@ -166,9 +168,9 @@ export class Mesh<T extends Vertex> extends Resource
 					gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
 				}
 				
-				gl.bindBuffer(gl.ARRAY_BUFFER, null);
+				this._context.bindVertexBuffer(null);
 			} else {
-				gl.deleteBuffer(this._vbo);
+				this._context.deleteVertexBuffer(this._vbo);
 				this._vbo = null;
 			}
 		} else {
@@ -185,7 +187,7 @@ export class Mesh<T extends Vertex> extends Resource
 			let gl = this._context.gl;
 
 			if (this._elements.length > 0) {
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._ebo);
+				this._context.bindElementBuffer(this._ebo);
 				let data = this.getRawElementData();
 
 				if (this._prevEBOLen == this._elements.length) {
@@ -194,9 +196,9 @@ export class Mesh<T extends Vertex> extends Resource
 					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
 				}
 				
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+				this._context.bindElementBuffer(null);
 			} else {
-				gl.deleteBuffer(this._ebo);
+				this._context.deleteElementBuffer(this._ebo);
 				this._ebo = null;
 			}
 		} else {
@@ -217,7 +219,7 @@ export class Mesh<T extends Vertex> extends Resource
 	{
 		if (this._vbo != null) {
 			let gl = this._context.gl;
-			gl.bindVertexArray(this._vao);
+			this._context.bindVertexArray(this._vao);
 
 			if (this._ebo != null) {
 				gl.drawElements(gl.TRIANGLES,  Math.min(length, this._elements.length), gl.UNSIGNED_SHORT, offset);
@@ -225,17 +227,16 @@ export class Mesh<T extends Vertex> extends Resource
 				gl.drawArrays(gl.TRIANGLES, offset, Math.min(length, this._vertices.length));
 			}
 			
-			gl.bindVertexArray(null);
+			this._context.bindVertexArray(null);
 		}
 	}
 	
 	// Delete
 	public delete()
 	{
-		let gl = this._context.gl;
-		gl.deleteVertexArray(this._vao);
-		if (this._vbo != null) gl.deleteBuffer(this._vbo);
-		if (this._ebo != null) gl.deleteBuffer(this._ebo);
+		this._context.deleteVertexArray(this._vao);
+		this._context.deleteVertexBuffer(this._vbo);
+		this._context.deleteElementBuffer(this._ebo);
 	}
 	
 	/********************/
