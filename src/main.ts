@@ -159,10 +159,10 @@ function renderContext(contextName: string, time: number)
 
 	let view = DGL.Matrix.view3D([x, y, 64 + z], [0, 0, 0], [0, 1, 0]);
 
-	DGL.Shader.setUniformTexture("shader_main", "txt", 0);
-	DGL.Shader.setUniformMatrix4fv("shader_main", "model", model);
-	DGL.Shader.setUniformMatrix4fv("shader_main", "view", view);
-	DGL.Shader.setUniformMatrix4fv("shader_main", "projection", perspective);
+	DGL.Shader.setTexture("shader_main", "txt", 0);
+	DGL.Shader.setMatrix4("shader_main", "model", model);
+	DGL.Shader.setMatrix4("shader_main", "view", view);
+	DGL.Shader.setMatrix4("shader_main", "projection", perspective);
 
 	DGL.Shader.bind("shader_main");
 	DGL.Texture.setActive(0, "texture_test");
@@ -182,10 +182,10 @@ function renderContext(contextName: string, time: number)
 
 	view = DGL.Matrix.view3D([x, y, 256 + z], [0, 0, 0], [0, 1, 0]);
 
-	DGL.Shader.setUniformTexture("shader_main", "txt", 0);
-	DGL.Shader.setUniformMatrix4fv("shader_main", "model", model);
-	DGL.Shader.setUniformMatrix4fv("shader_main", "view", view);
-	DGL.Shader.setUniformMatrix4fv("shader_main", "projection", perspective);
+	DGL.Shader.setTexture("shader_main", "txt", 0);
+	DGL.Shader.setMatrix4("shader_main", "model", model);
+	DGL.Shader.setMatrix4("shader_main", "view", view);
+	DGL.Shader.setMatrix4("shader_main", "projection", perspective);
 
 	DGL.Shader.bind("shader_main3");
 	DGL.Framebuffer.setActiveTexture(0, "fbo");
@@ -200,9 +200,9 @@ function renderContext(contextName: string, time: number)
 	angle = radians(time / 25);
 	model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1.1, 1.1, 1.1]);
 	
-	DGL.Shader.setUniformMatrix4fv("shader_main2", "model", model);
-	DGL.Shader.setUniformMatrix4fv("shader_main2", "view", view);
-	DGL.Shader.setUniformMatrix4fv("shader_main2", "projection", perspective);
+	DGL.Shader.setMatrix4("shader_main2", "model", model);
+	DGL.Shader.setMatrix4("shader_main2", "view", view);
+	DGL.Shader.setMatrix4("shader_main2", "projection", perspective);
 
 	DGL.Shader.bind("shader_main2");
 	DGL.Mesh.draw("mesh_cube");
