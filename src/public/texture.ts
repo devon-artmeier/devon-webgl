@@ -8,9 +8,9 @@ export class Texture extends Resource
 	private _texture: WebGLTexture;
 	private _filter: Vector2<number> = [Texture.Bilinear, Texture.Bilinear];
 	private _wrap: Vector2<number> = [Texture.Repeat, Texture.Repeat];
-
 	private _fbo: WebGLFramebuffer;
 	private _depthBuffer: WebGLTexture;
+	private _createdMipmap: boolean;
 	
 	get size(): Vector2<number> { return [this._size[0], this._size[1]]; }
 	get width(): number { return this._size[0]; }
@@ -41,9 +41,6 @@ export class Texture extends Resource
 		super(context, id);
 		let gl = this._context.gl;
 
-		if (this._size[0] <= 0) this._size[0] = 1;
-		if (this._size[1] <= 0) this._size[1] = 1;
-
 		this._texture = gl.createTexture();
 		this._context.bindTexture(this._texture);
 		
@@ -52,8 +49,7 @@ export class Texture extends Resource
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0],this. _size[1], 0,
-			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._size[0] * this._size[1] * 4));
+		this.createBlank(this._size);
 	}
 	
 	// Set filter
@@ -74,8 +70,7 @@ export class Texture extends Resource
 			gl.NEAREST, gl.LINEAR,
 			gl.NEAREST_MIPMAP_LINEAR, gl.LINEAR_MIPMAP_LINEAR,
 		];
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-			filters[filter + (this._fbo == null ? 2 : 0)]);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filters[filter + (this._createdMipmap ? 2 : 0)]);
 	}
 
 	// Set magnification filter
@@ -143,28 +138,26 @@ export class Texture extends Resource
 				gl.TEXTURE_2D, this._texture, 0);
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT,
 				gl.TEXTURE_2D, this._depthBuffer, 0);
-
-			this.setMinFilter(this._filter[0]);
-		} else {
-			this._context.bindFramebuffer(this._fbo);
 		}
+		
+		this._context.bindFramebuffer(this._fbo);
+		this.setMipmapCreate(false);
 	}
 	
-	// Generate with color
-	public generate(color: Vector4<number>)
+	// Create blank texture
+	public createBlank(size: Vector2<number>)
 	{
-		let conv = function(val: number) {
-			return Math.floor(val * 255);
-		};
-
 		let gl = this._context.gl;
 		this._context.bindTexture(this._texture);
+
+		if (size[0] <= 0) size[0] = 1;
+		if (size[1] <= 0) size[1] = 1;
 		
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-			new Uint8Array([conv(color[0]), conv(color[1]), conv(color[2]), conv(color[3])]));
-		gl.generateMipmap(gl.TEXTURE_2D);
-		
-		this._size = [1, 1];
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size[0], size[1], 0, gl.RGBA, gl.UNSIGNED_BYTE,
+			new Uint8Array(size[0] * size[1] * 4));
+
+		this._size = size;
+		this.setMipmapCreate(false);
 	}
 	
 	// Load image file
@@ -177,19 +170,35 @@ export class Texture extends Resource
 		image.onload = () => {
 			if (this._texture != null) {
 				let gl = this._context.gl;
-				this._size = [image.width, image.height];
-
-				let curTexture = gl.getParameter(gl.TEXTURE_BINDING_2D) as WebGLTexture;
 
 				gl.bindTexture(gl.TEXTURE_2D, this._texture);
 				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-				gl.generateMipmap(gl.TEXTURE_2D);
 
-				gl.bindTexture(gl.TEXTURE_2D, curTexture);
+				this._size = [image.width, image.height];
+				this.setMipmapCreate(false);
+
+				gl.bindTexture(gl.TEXTURE_2D, this._context.currentTexture);
 			}
 		};
 	}
 	
+	// Create mipmap
+	public createMipmap()
+	{
+		let gl = this._context.gl;
+		this._context.bindTexture(this._texture);
+
+		gl.generateMipmap(gl.TEXTURE_2D);
+		this.setMipmapCreate(true);
+	}
+
+	// Set mipmap creation flag
+	private setMipmapCreate(flag: boolean)
+	{
+		this._createdMipmap = flag;
+		this.setMinFilter(this._filter[0]);
+	}
+
 	// Delete
 	public delete()
 	{
@@ -332,16 +341,22 @@ export class Texture extends Resource
 		ContextPool.getBind()?.bindFramebuffer(null);
 	}
 	
-	// Generate with color
-	public static generate(textureID: string, color: Vector4<number>)
+	// Create blank texture
+	public static createBlank(textureID: string, size: Vector2<number>)
 	{
-		this.getTexture(textureID)?.generate(color);
+		this.getTexture(textureID)?.createBlank(size);
 	}
 	
 	// Load image
 	public static loadImage(textureID: string, path: string)
 	{
 		this.getTexture(textureID)?.loadImage(path);
+	}
+	
+	// Create mipmap
+	public static createMipmap(textureID: string)
+	{
+		this.getTexture(textureID)?.createMipmap();
 	}
 	
 	// Delete

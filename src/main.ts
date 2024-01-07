@@ -118,6 +118,7 @@ function createContext(contextName: string, canvasID: string)
 	
 	DGL.Texture.create("texture_test");
 	DGL.Texture.loadImage("texture_test", "./img/test.png");
+	DGL.Texture.createMipmap("texture_test");
 	
 	DGL.Texture.create("texture_fbo", [256, 256]);
 
