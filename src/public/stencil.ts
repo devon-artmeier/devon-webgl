@@ -42,6 +42,16 @@ export class Stencil
 		}
 	}
 
+	// Clear stencil buffer
+	public static clear()
+	{
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
+			gl.clear(gl.STENCIL_BUFFER_BIT);
+		}
+	}
+
 	// Set stencil function
 	public static setFunction(func: number, ref: number, mask: number)
 	{

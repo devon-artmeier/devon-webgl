@@ -94,7 +94,7 @@ const cubeVertices = [
 	new Vertex(-64,  64,  64,  0, 0)
 ];
 
-const elementsCube = [
+const cubeElements = [
 	0,  1,  2,  1,  0,  3,
 	4,  5,  6,  6,  7,  4,
 	8,  9,  10, 10, 11, 8,
@@ -117,22 +117,20 @@ function createContext(contextName: string, canvasID: string)
 	DGL.Blend.setFunction(DGL.Blend.SrcAlpha, DGL.Blend.OneMinusSrcAlpha);
 	
 	DGL.Texture.create("texture_test");
-	DGL.Texture.setFilter("texture_test", DGL.Texture.Nearest);
-	DGL.Texture.setWrap("texture_test",  DGL.Texture.Clamp);
 	DGL.Texture.loadImage("texture_test", "./img/test.png");
 
 	DGL.Shader.create("shader_main", vertexShaderCode, fragShaderCode);
 	DGL.Shader.create("shader_main2", vertexShaderCode, fragShaderCode2);
 
-	DGL.Mesh.createStatic("mesh_cube", cubeVertices, elementsCube);
+	DGL.Mesh.createStatic("mesh_cube", cubeVertices, cubeElements);
 
-	DGL.Framebuffer.create("fbo", [256, 256]);
-	DGL.Framebuffer.setFilter("fbo", DGL.Texture.Nearest);
-
-	DGL.Depth.setFunction(DGL.Depth.LessEqual);
+	DGL.Framebuffer.create("fbo_cube", [256, 256]);
 
 	DGL.Stencil.enable();
 	DGL.Stencil.setOptions(DGL.Stencil.Keep, DGL.Stencil.Keep, DGL.Stencil.Replace);
+	
+	DGL.Cull.setFace(DGL.Cull.Front);
+	DGL.Cull.setFront(DGL.Cull.Clockwise);
 }
 
 function renderContext(contextName: string, time: number)
@@ -140,12 +138,15 @@ function renderContext(contextName: string, time: number)
 	DGL.Context.bind(contextName);
 	
 	DGL.Depth.enable();
+	DGL.Depth.setFunction(DGL.Depth.LessEqual);
 	DGL.Stencil.setMask(0xFF);
 	DGL.Stencil.setFunction(DGL.Stencil.Always, 1, 0xFF);
 	
 	///////////////////////////////////////////////////////////////
 	
-	DGL.Framebuffer.bind("fbo");
+	DGL.Framebuffer.bind("fbo_cube");
+	
+	DGL.Cull.enable();
 	
 	DGL.Viewport.set([0, 0], [256, 256]);
 	DGL.Context.clear([0.1333, 0, 0.5, 1]);
@@ -153,73 +154,91 @@ function renderContext(contextName: string, time: number)
 	let perspective = DGL.Matrix.perspective(60, [256, 256], [0.1, 1000]);
 
 	let angle = radians(time / 25);
-	let model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);
 	
 	let x = Math.cos(radians(time / 4)) * 256;
 	let y = Math.sin(radians(time / 4)) * 256;
 	let z = Math.sin(radians((time / 8))) * 200;
 
 	let view = DGL.Matrix.view3D([x, y, 64 + z], [0, 0, 0], [0, 1, 0]);
+	let model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);
 
+	DGL.Shader.bind("shader_main");
 	DGL.Shader.setTexture("shader_main", "txt", 0);
 	DGL.Shader.setMatrix4("shader_main", "model", model);
 	DGL.Shader.setMatrix4("shader_main", "view", view);
 	DGL.Shader.setMatrix4("shader_main", "projection", perspective);
 
-	DGL.Shader.bind("shader_main");
 	DGL.Texture.setActive(0, "texture_test");
 	DGL.Mesh.draw("mesh_cube");
 	
-	DGL.Framebuffer.unbind();
-	
 	///////////////////////////////////////////////////////////////
 	
+	DGL.Framebuffer.unbind();
+
 	DGL.Viewport.set([0, 0], [640, 480]);
-	DGL.Context.clear([0, 0, 0, 1]);
-	
-	DGL.Cull.enable();
-	DGL.Cull.setFace(DGL.Cull.Front);
-	DGL.Cull.setFront(DGL.Cull.Clockwise);
+	DGL.Context.clear([0, 0, 0.5, 1]);
 	
 	perspective = DGL.Matrix.perspective(60, [640, 480], [0.1, 1000]);
 
 	angle = radians(time / 25);
-	model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1, 1, 1]);
 
 	view = DGL.Matrix.view3D([x, y, 256 + z], [0, 0, 0], [0, 1, 0]);
 
+	DGL.Shader.bind("shader_main");
 	DGL.Shader.setTexture("shader_main", "txt", 0);
-	DGL.Shader.setMatrix4("shader_main", "model", model);
 	DGL.Shader.setMatrix4("shader_main", "view", view);
 	DGL.Shader.setMatrix4("shader_main", "projection", perspective);
-
-	DGL.Shader.bind("shader_main3");
-	DGL.Framebuffer.setActiveTexture(0, "fbo");
-	DGL.Mesh.draw("mesh_cube");
 	
-	///////////////////////////////////////////////////////////////
-	
-	DGL.Cull.disable();
-	DGL.Depth.disable();
-	DGL.Stencil.setFunction(DGL.Stencil.NotEqual, 1, 0xFF);
-	DGL.Stencil.setMask(0x00);
-
-	angle = radians(time / 25);
-	model = DGL.Matrix.model3D([0, 0, 0], [angle, angle, angle], [1.1, 1.1, 1.1]);
-	
-	DGL.Shader.setMatrix4("shader_main2", "model", model);
+	DGL.Shader.bind("shader_main2");
 	DGL.Shader.setMatrix4("shader_main2", "view", view);
 	DGL.Shader.setMatrix4("shader_main2", "projection", perspective);
 
-	DGL.Shader.bind("shader_main2");
-	DGL.Mesh.draw("mesh_cube");
+	let cubes = new Array<[number, number, number]>(
+		[0, 0, 0],
+		[-256, -256, -256],
+		[256, -256, -256],
+		[-256, -256, 256],
+		[256, -256, 256],
+		[-256, 256, -256],
+		[256, 256, -256],
+		[-256, 256, 256],
+		[256, 256, 256]
+	);
+
+	for (let i = 0; i < cubes.length; i++) {
+		model = DGL.Matrix.model3D(cubes[i], [angle, angle, angle], [1, 1, 1]);
+		
+		DGL.Depth.setFunction(DGL.Depth.LessEqual);
+		DGL.Stencil.clear();
+		DGL.Stencil.setMask(0xFF);
+		DGL.Stencil.setFunction(DGL.Stencil.Always, 1, 0xFF);
+		DGL.Cull.enable();
+
+		DGL.Shader.bind("shader_main");
+		DGL.Framebuffer.setActiveTexture(0, "fbo_cube");
+		DGL.Shader.setMatrix4("shader_main", "model", model);
+		DGL.Mesh.draw("mesh_cube");
+		
+		DGL.Depth.setFunction(DGL.Depth.Always);
+		DGL.Stencil.setFunction(DGL.Stencil.NotEqual, 1, 0xFF);
+		DGL.Stencil.setMask(0x00);
+		DGL.Cull.disable();
+		
+		model = DGL.Matrix.model3D(cubes[i], [angle, angle, angle], [1.1, 1.1, 1.1]);
+
+		DGL.Shader.bind("shader_main2");
+		DGL.Shader.setMatrix4("shader_main2", "model", model);
+		DGL.Mesh.draw("mesh_cube");
+	}
 }
 
 function render(time: number)
 {
 	renderContext("main", time);
+	frame++;
 	requestAnimationFrame(render);
 }
 
+let frame = 0;
 createContext("main", "test-canvas");
 requestAnimationFrame(render);

@@ -32,6 +32,16 @@ export class Depth
 		}
 	}
 
+	// Clear depth buffer
+	public static clear()
+	{
+		let context = ContextCollection.getBind();
+		if (context != null) {
+			let gl = context.gl;
+			gl.clear(gl.DEPTH_BUFFER_BIT);
+		}
+	}
+
 	// Set depth function
 	public static setFunction(func: number)
 	{
