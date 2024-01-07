@@ -63,44 +63,44 @@ class Vertex extends DGL.Vertex
 }
 
 const cubeVertices = [
-	new Vertex(-64, -64,  64,  0, 1),
-	new Vertex( 64, -64,  64,  1, 1),
-	new Vertex(-64,  64,  64,  0, 0),
-	new Vertex( 64,  64,  64,  1, 0),
+	new Vertex(-64, -64, -64,  0, 0),
+	new Vertex( 64,  64, -64,  1, 1),
+	new Vertex( 64, -64, -64,  1, 0),
+	new Vertex(-64,  64, -64,  0, 1),
 	 
-	new Vertex( 64, -64, -64,  0, 1),
-	new Vertex(-64, -64, -64,  1, 1),
-	new Vertex( 64,  64, -64,  0, 0),
-	new Vertex(-64,  64, -64,  1, 0),
-	
-	new Vertex(-64, -64, -64,  0, 1),
-	new Vertex(-64, -64,  64,  1, 1),
-	new Vertex(-64,  64, -64,  0, 0),
-	new Vertex(-64,  64,  64,  1, 0),
-	
-	new Vertex( 64, -64,  64,  0, 1),
-	new Vertex( 64, -64, -64,  1, 1),
-	new Vertex( 64,  64,  64,  0, 0),
-	new Vertex( 64,  64, -64,  1, 0),
-	 
-	new Vertex(-64, -64, -64,  0, 1),
-	new Vertex( 64, -64, -64,  1, 1),
 	new Vertex(-64, -64,  64,  0, 0),
 	new Vertex( 64, -64,  64,  1, 0),
-	 
-	new Vertex(-64,  64,  64,  0, 1),
 	new Vertex( 64,  64,  64,  1, 1),
-	new Vertex(-64,  64, -64,  0, 0),
-	new Vertex( 64,  64, -64,  1, 0)
+	new Vertex(-64,  64,  64,  0, 1),
+	
+	new Vertex(-64,  64,  64,  1, 0),
+	new Vertex(-64,  64, -64,  1, 1),
+	new Vertex(-64, -64, -64,  0, 1),
+	new Vertex(-64, -64,  64,  0, 0),
+	
+	new Vertex( 64,  64,  64,  1, 0),
+	new Vertex( 64, -64, -64,  0, 1),
+	new Vertex( 64,  64, -64,  1, 1),
+	new Vertex( 64, -64,  64,  0, 0),
+	 
+	new Vertex(-64, -64, -64,  0, 1),
+	new Vertex( 64, -64, -64,  1, 1),
+	new Vertex( 64, -64,  64,  1, 0),
+	new Vertex(-64, -64,  64,  0, 0),
+	 
+	new Vertex(-64,  64, -64,  0, 1),
+	new Vertex( 64,  64,  64,  1, 0),
+	new Vertex( 64,  64, -64,  1, 1),
+	new Vertex(-64,  64,  64,  0, 0)
 ];
 
 const elementsCube = [
-	0,  1,  2,  1,  2,  3,
-	4,  5,  6,  5,  6,  7,
-	8,  9,  10, 9,  10, 11,
-	12, 13, 14, 13, 14, 15,
-	16, 17, 18, 17, 18, 19,
-	20, 21, 22, 21, 22, 23
+	0,  1,  2,  1,  0,  3,
+	4,  5,  6,  6,  7,  4,
+	8,  9,  10, 10, 11, 8,
+	12, 13, 14, 13, 12, 15,
+	16, 17, 18, 18, 19, 16,
+	20, 21, 22, 21, 20, 23
 ];
 
 function radians(angle: number): number
@@ -177,6 +177,10 @@ function renderContext(contextName: string, time: number)
 	DGL.Viewport.set([0, 0], [640, 480]);
 	DGL.Context.clear([0, 0, 0, 1]);
 	
+	DGL.Cull.enable();
+	DGL.Cull.setFace(DGL.Cull.Front);
+	DGL.Cull.setFront(DGL.Cull.Clockwise);
+	
 	perspective = DGL.Matrix.perspective(60, [640, 480], [0.1, 1000]);
 
 	angle = radians(time / 25);
@@ -195,6 +199,7 @@ function renderContext(contextName: string, time: number)
 	
 	///////////////////////////////////////////////////////////////
 	
+	DGL.Cull.disable();
 	DGL.Depth.disable();
 	DGL.Stencil.setFunction(DGL.Stencil.NotEqual, 1, 0xFF);
 	DGL.Stencil.setMask(0x00);
