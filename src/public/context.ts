@@ -127,8 +127,7 @@ export class Context extends Resource
 			ContextPool.bind(this.id);
 			
 			let dpr = window.devicePixelRatio;
-			size[0] *= dpr;
-			size[1] *= dpr;
+			size = [Math.round(size[0] * dpr), Math.round(size[1] * dpr)];
 			
 			Texture.create("fbo_devon_webgl", size);
 			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
@@ -143,14 +142,14 @@ export class Context extends Resource
 	{
 		const rect = this._container.getBoundingClientRect();
 		
-		this._canvas.style.left  = `${window.scrollX + rect.left}px`;
-		this._canvas.style.top  = `${window.scrollY + rect.top}px`;
-		this._canvas.style.width  = `${rect.width}px`;
-		this._canvas.style.height  = `${rect.height}px`;
-		
 		let dpr = window.devicePixelRatio;
 		this._canvas.width = Math.round(rect.width * dpr);
 		this._canvas.height = Math.round(rect.height * dpr);
+		
+		this._canvas.style.left  = `${window.scrollX + rect.left}px`;
+		this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+		this._canvas.style.width  = `${this._canvas.width / dpr}px`;
+		this._canvas.style.height  = `${this._canvas.height / dpr}px`;
 		
 		let fboSize = Texture.getSize("fbo_devon_webgl");
 		if (fboSize[0] != this._canvas.width || fboSize[1] != this._canvas.height) {
