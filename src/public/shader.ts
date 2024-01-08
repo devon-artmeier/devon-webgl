@@ -47,7 +47,7 @@ export class Shader extends Resource
 	// Create
 	public static create(shaderID: string, vertexCode: string, fragCode: string)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let shader = new Shader(context, shaderID, vertexCode, fragCode);
 			context.shaders.add(shaderID, shader);
@@ -57,7 +57,7 @@ export class Shader extends Resource
 	// Bind
 	public static bind(shaderID: string)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			context.bindShader((context.shaders.get(shaderID) as Shader)._program);
 		}
@@ -66,85 +66,85 @@ export class Shader extends Resource
 	// Unbind
 	public static unbind()
 	{
-		ContextPool.getBind()?.bindShader(null);
+		ContextPool.bind?.bindShader(null);
 	}
 	
 	// Get uniform attribute
 	public static getUniform(name: string): any
 	{
-		ContextPool.getBind()?.gl.getUniform(ContextPool.getBind()?.currentShader, name);
+		ContextPool.bind?.gl.getUniform(ContextPool.bind?.currentShader, name);
 	}
 	
 	// Get uniform attribute location
 	private static getUniformLocation(name: string): WebGLUniformLocation
 	{
-		return ContextPool.getBind()?.gl.getUniformLocation(ContextPool.getBind()?.currentShader, name);
+		return ContextPool.bind?.gl.getUniformLocation(ContextPool.bind?.currentShader, name);
 	}
 	
 	// Set 1D float value uniform attribute
 	public static setFloat(name: string, v0: number)
 	{
-		ContextPool.getBind()?.gl.uniform1f(this.getUniformLocation(name), v0);
+		ContextPool.bind?.gl.uniform1f(this.getUniformLocation(name), v0);
 	}
 	
 	// Set 1D integer value uniform attribute
 	public static setInt(name: string, v0: number)
 	{
-		ContextPool.getBind()?.gl.uniform1i(this.getUniformLocation(name), v0);
+		ContextPool.bind?.gl.uniform1i(this.getUniformLocation(name), v0);
 	}
 	
 	// Set 2D float array uniform attribute
 	public static setVec2(name: string, val: Vector2<number>)
 	{
-		ContextPool.getBind()?.gl.uniform2fv(this.getUniformLocation(name), val);
+		ContextPool.bind?.gl.uniform2fv(this.getUniformLocation(name), val);
 	}
 
 	// Set 2D integer array uniform attribute
 	public static setIVec2(name: string, val: Vector2<number>)
 	{
-		ContextPool.getBind()?.gl.uniform2iv(this.getUniformLocation(name), val);
+		ContextPool.bind?.gl.uniform2iv(this.getUniformLocation(name), val);
 	}
 	
 	// Set 3D float array uniform attribute
 	public static setVec3(name: string, val: Vector3<number>)
 	{
-		ContextPool.getBind()?.gl.uniform3fv(this.getUniformLocation(name), val);
+		ContextPool.bind?.gl.uniform3fv(this.getUniformLocation(name), val);
 	}
 	
 	// Set 3D integer array uniform attribute
 	public static setIVec3(name: string, val: Vector3<number>)
 	{
-		ContextPool.getBind()?.gl.uniform3iv(this.getUniformLocation(name), val);
+		ContextPool.bind?.gl.uniform3iv(this.getUniformLocation(name), val);
 	}
 	
 	// Set 4D float array uniform attribute
 	public static setVec4(name: string, val: Vector4<number>)
 	{
-		ContextPool.getBind()?.gl.uniform4fv(this.getUniformLocation(name), val);
+		ContextPool.bind?.gl.uniform4fv(this.getUniformLocation(name), val);
 	}
 	
 	// Set 4D integer array uniform attribute
 	public static setIVec4(name: string, val: Vector4<number>)
 	{
-		ContextPool.getBind()?.gl.uniform4iv(this.getUniformLocation(name), val);
+		ContextPool.bind?.gl.uniform4iv(this.getUniformLocation(name), val);
 	}
 	
 	// Set 2-component matrix uniform attribute
 	public static setMatrix2(name: string, val: Matrix2<number>)
 	{
-		ContextPool.getBind()?.gl.uniformMatrix2fv(this.getUniformLocation(name), false, val);
+		ContextPool.bind?.gl.uniformMatrix2fv(this.getUniformLocation(name), false, val);
 	}
 	
 	// Set 3-component matrix uniform attribute
 	public static setMatrix3(name: string, val: Matrix3<number>)
 	{
-		ContextPool.getBind()?.gl.uniformMatrix3fv(this.getUniformLocation(name), false, val);
+		ContextPool.bind?.gl.uniformMatrix3fv(this.getUniformLocation(name), false, val);
 	}
 	
 	// Set 4-component matrix uniform attribute
 	public static setMatrix4(name: string, val: Matrix4<number>)
 	{
-		ContextPool.getBind()?.gl.uniformMatrix4fv(this.getUniformLocation(name), false, val);
+		ContextPool.bind?.gl.uniformMatrix4fv(this.getUniformLocation(name), false, val);
 	}
 	
 	// Set texture value uniform attribute
@@ -156,12 +156,12 @@ export class Shader extends Resource
 	// Delete
 	public static delete(shaderID: string)
 	{
-		ContextPool.getBind()?.shaders.delete(shaderID);
+		ContextPool.bind?.shaders.delete(shaderID);
 	}
 	
 	// Delete all shaders
 	public static clear()
 	{
-		ContextPool.getBind()?.shaders.clear();
+		ContextPool.bind?.shaders.clear();
 	}
 }

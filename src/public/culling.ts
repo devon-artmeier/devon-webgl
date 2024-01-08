@@ -14,7 +14,7 @@ export class Cull
 	// Enable culling
 	public static enable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.enable(gl.CULL_FACE);
@@ -24,7 +24,7 @@ export class Cull
 	// Disable culling
 	public static disable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.disable(gl.CULL_FACE);
@@ -34,7 +34,7 @@ export class Cull
 	// Set cull face
 	public static setFace(face: number)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.cullFace([gl.FRONT, gl.BACK, gl.FRONT_AND_BACK][face]);
@@ -44,7 +44,7 @@ export class Cull
 	// Set front face
 	public static setFront(face: number)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.frontFace([gl.CW, gl.CCW][face]);

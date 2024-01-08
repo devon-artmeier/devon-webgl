@@ -6,7 +6,7 @@ export class Viewport
 	// Set viewport
 	public static set(pos: Vector2<number>, res: Vector2<number>)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.viewport(... pos, ... res);
@@ -16,7 +16,7 @@ export class Viewport
 	// Get viewport
 	public static get(): readonly number[]
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			return gl.getParameter(gl.VIEWPORT);

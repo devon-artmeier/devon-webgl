@@ -222,13 +222,13 @@ export class Texture extends Resource
 	// Get texture
 	private static getTexture(textureID: string): Texture
 	{
-		return ContextPool.getBind()?.textures.get(textureID) as Texture;
+		return ContextPool.bind?.textures.get(textureID) as Texture;
 	}
 
 	// Create
 	public static create(textureID: string, size: Vector2<number> = [1, 1])
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let texture = new Texture(context, textureID, size);
 			context.textures.add(textureID, texture);
@@ -329,7 +329,7 @@ export class Texture extends Resource
 	// Set active texture number
 	public static setActive(num: number, textureID: string)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.activeTexture(gl.TEXTURE1 + num);
@@ -347,7 +347,7 @@ export class Texture extends Resource
 	// Unset render target
 	public static unsetRenderTarget()
 	{
-		ContextPool.getBind()?.bindFramebuffer(null);
+		ContextPool.bind?.bindFramebuffer(null);
 	}
 	
 	// Create blank texture
@@ -371,12 +371,12 @@ export class Texture extends Resource
 	// Delete
 	public static delete(textureID: string)
 	{
-		ContextPool.getBind().textures.delete(textureID);
+		ContextPool.bind.textures.delete(textureID);
 	}
 	
 	// Delete all textures
 	public static clear()
 	{
-		ContextPool.getBind().textures.clear();
+		ContextPool.bind.textures.clear();
 	}
 }

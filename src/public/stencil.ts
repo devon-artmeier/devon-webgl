@@ -25,7 +25,7 @@ export class Stencil
 	// Enable stencil testing
 	public static enable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.enable(gl.STENCIL_TEST);
@@ -35,7 +35,7 @@ export class Stencil
 	// Disable stencil testing
 	public static disable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.disable(gl.STENCIL_TEST);
@@ -45,7 +45,7 @@ export class Stencil
 	// Clear stencil buffer
 	public static clear()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.clear(gl.STENCIL_BUFFER_BIT);
@@ -55,7 +55,7 @@ export class Stencil
 	// Set stencil function
 	public static setFunction(func: number, ref: number, mask: number)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.stencilFunc([
@@ -68,7 +68,7 @@ export class Stencil
 	// Set stencil options
 	public static setOptions(sfail: number, dpfail: number, dppass: number)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			let ops = [
@@ -82,7 +82,7 @@ export class Stencil
 	// Set stencil mask
 	public static setMask(mask: number)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.stencilMask(mask); 

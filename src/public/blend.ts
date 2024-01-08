@@ -21,7 +21,7 @@ export class Blend
 	// Enable blending
 	public static enable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.enable(gl.BLEND);
@@ -31,7 +31,7 @@ export class Blend
 	// Disable blending
 	public static disable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.disable(gl.BLEND);
@@ -41,7 +41,7 @@ export class Blend
 	// Get blend function
 	private static getFunction(func: number): number
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			return [
@@ -58,7 +58,7 @@ export class Blend
 	// Set blend function
 	public static setFunction(sfunc: number, dfunc: number)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.blendFunc(this.getFunction(sfunc), this.getFunction(dfunc));
@@ -68,7 +68,7 @@ export class Blend
 	// Set separate blend functions
 	public static setFunctionSeparate(srgb: number, drgb: number, salpha: number, dalpha: number)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.blendFuncSeparate(this.getFunction(srgb), this.getFunction(drgb),

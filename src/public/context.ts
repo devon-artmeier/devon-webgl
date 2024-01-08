@@ -101,8 +101,6 @@ export class Context extends Resource
 		super(null, id);
 		
 		if (element != null) {
-			ContextPool.contexts.add(id, this);
-				
 			if (size[0] <= 0) size[0] = 1;
 			if (size[1] <= 0) size[1] = 1;
 			
@@ -123,8 +121,8 @@ export class Context extends Resource
 			this.gl = this._canvas?.getContext("webgl2",
 				{ alpha: true, stencil: true, preserveDrawingBuffer: true });
 			
-			let oldContext = ContextPool.getBind();
-			ContextPool.bind(this.id);
+			let oldContext = ContextPool.bind;
+			ContextPool.bind = this;
 			
 			let dpr = window.devicePixelRatio;
 			size = [Math.round(size[0] * dpr), Math.round(size[1] * dpr)];
@@ -133,7 +131,7 @@ export class Context extends Resource
 			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
 			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
 			
-			if (oldContext != null) ContextPool.bind(oldContext.id);
+			ContextPool.bind = oldContext;
 		}
 	}
 	
@@ -161,8 +159,8 @@ export class Context extends Resource
 		Viewport.set([0, 0], fboSize);
 	}
 	
-	// Finish rendering
-	public render()
+	// Draw
+	public draw()
 	{
 		this._currentFBO = null;
 		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
@@ -334,20 +332,24 @@ export class Context extends Resource
 	// Create context
 	public static create(id: string, element: HTMLElement, size: Vector2<number>)
 	{
-		new Context(element, id, size);
+		let context = new Context(element, id, size);
+		ContextPool.contexts.add(id, context);
 	}
 
 	// Bind
 	public static bind(id: string)
 	{
-		ContextPool.bind(id);
-		ContextPool.getBind()?.bind();
+		let context = ContextPool.get(id);
+		if (context != null) { 
+			ContextPool.bind = context;
+			context.bind();
+		}
 	}
 	
 	// Clear
 	public static clear(color: Vector4<number>)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.clearColor(... color);
@@ -355,22 +357,22 @@ export class Context extends Resource
 		}
 	}
 	
-	// Finish rendering
-	public static render()
+	// Draw
+	public static draw()
 	{
-		ContextPool.getBind()?.render();
+		ContextPool.bind?.draw();
 	}
 	
 	// Resize canvas
 	public static resize(size: Vector2<number>)
 	{
-		ContextPool.getBind()?.resize(size);
+		ContextPool.bind?.resize(size);
 	}
 	
 	// Set render size
 	public static getSize(): Vector2<number>
 	{
-		return ContextPool.getBind()?.getSize();
+		return ContextPool.bind?.getSize();
 	}
 	
 	// Go fullscreen

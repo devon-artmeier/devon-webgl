@@ -7,7 +7,7 @@ export class Scissor
 	// Enable scissor test
 	public static enable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.enable(gl.SCISSOR_TEST);
@@ -17,7 +17,7 @@ export class Scissor
 	// Disable scissor test
 	public static disable()
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			gl.disable(gl.SCISSOR_TEST);
@@ -27,7 +27,7 @@ export class Scissor
 	// Set scissor test region
 	public static setRegion(pos: Vector2<number>, res: Vector2<number>)
 	{
-		let context = ContextPool.getBind();
+		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
 			let viewport = Viewport.get();
