@@ -144,7 +144,6 @@ export class Context extends Resource
 				Context._resizeObserver.observe(this._container, { box: "content-box" });
 			}
 			
-			this.bind();
 			if (oldContext != null) ContextPool.bind(oldContext.id);
 		}
 	}

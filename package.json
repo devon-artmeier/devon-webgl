@@ -1,6 +1,6 @@
 {
 	"name": "devon-webgl",
-	"version": "0.0.8",
+	"version": "0.0.9",
 	"author": "Devon Artmeier",
 	"description": "My personal WebGL TypeScript framework for my projects.",
 	"license": "UNLICENSED",
