@@ -69,6 +69,9 @@ const fboElements = [
 
 export class Context extends Resource
 {
+	private static _resizeMap = new Map();
+	private static _resizeObserver = new ResizeObserver(this.onResize);
+	
 	public readonly gl: WebGL2RenderingContext;
 	public readonly textures = new ResourceManager();
 	public readonly shaders = new ResourceManager();
@@ -126,11 +129,22 @@ export class Context extends Resource
 			let oldContext = ContextPool.getBind();
 			ContextPool.bind(this.id);
 			
+			let dpr = window.devicePixelRatio;
+			size[0] *= dpr;
+			size[1] *= dpr;
+			
 			Texture.create("fbo_devon_webgl", size);
 			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
 			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
-			this.bind();
 			
+			Context._resizeMap.set(this._container, size);
+			try {
+				Context._resizeObserver.observe(this._container, { box: "device-pixel-content-box" });
+			} catch (e) {
+				Context._resizeObserver.observe(this._container, { box: "content-box" });
+			}
+			
+			this.bind();
 			if (oldContext != null) ContextPool.bind(oldContext.id);
 		}
 	}
@@ -144,16 +158,14 @@ export class Context extends Resource
 		this._canvas.style.width  = `${rect.width}px`;
 		this._canvas.style.height  = `${rect.height}px`;
 		
-		const dpr = window.devicePixelRatio;
-		let width = Math.round(rect.width * dpr);
-		let height = Math.round(rect.height * dpr);
-		this._canvas.width = width;
-		this._canvas.height = height;
+		let size = Context._resizeMap.get(this._container);
+		this._canvas.width = size[0];
+		this._canvas.height = size[1];
 		
 		let fboSize = Texture.getSize("fbo_devon_webgl");
-		if (fboSize[0] != width || fboSize[1] != height) {
-			fboSize = [width, height];
-			Texture.createBlank("fbo_devon_webgl", [width, height]);
+		if (fboSize[0] != size[0] || fboSize[1] != size[1]) {
+			fboSize = [size[0], size[1]];
+			Texture.createBlank("fbo_devon_webgl", [size[0], size[1]]);
 		}
 		
 		Texture.setRenderTarget("fbo_devon_webgl");
@@ -329,7 +341,7 @@ export class Context extends Resource
 	/********************/
 	/* STATIC FUNCTIONS */
 	/********************/
-
+	
 	// Create context
 	public static create(id: string, element: HTMLElement, size: Vector2<number>)
 	{
@@ -364,6 +376,35 @@ export class Context extends Resource
 	public static resize(size: Vector2<number>)
 	{
 		ContextPool.getBind()?.resize(size);
+	}
+	
+	// Resize event
+	private static onResize(entries)
+	{
+		let width;
+		let height;
+		let dpr = window.devicePixelRatio;
+		
+		for (const entry of entries) {
+			if (entry.devicePixelContentBoxSize) {
+				width = entry.devicePixelContentBoxSize[0].inlineSize;
+				height = entry.devicePixelContentBoxSize[0].blockSize;
+				dpr = 1;
+			} else if (entry.contentBoxSize) {
+				if (entry.contentBoxSize[0]) {
+					width = entry.contentBoxSize[0].inlineSize;
+					height = entry.contentBoxSize[0].blockSize;
+				} else {
+					width = entry.contentBoxSize.inlineSize;
+					height = entry.contentBoxSize.blockSize;
+				}
+			} else {
+				width = entry.contentRect.width;
+				height = entry.contentRect.height;
+			}
+			
+			Context._resizeMap.set(entry.target, [Math.round(width * dpr), Math.round(height * dpr)]);
+		}
 	}
 	
 	// Set render size
