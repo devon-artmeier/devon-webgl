@@ -69,7 +69,7 @@ const fboElements = [
 
 export class Context extends Resource
 {
-	private static _resizeMap = new Map();
+	private static _resizeMap = new Map<HTMLDivElement, [Context, Vector2<number>]>();
 	private static _resizeObserver = new ResizeObserver(this.onResize);
 	private static _fullscreen: boolean;
 	private static _fullscreenListener: boolean;
@@ -150,7 +150,7 @@ export class Context extends Resource
 			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
 			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
 			
-			Context._resizeMap.set(this._container, size);
+			Context._resizeMap.set(this._container, [this, size]);
 			try {
 				Context._resizeObserver.observe(this._container, { box: "device-pixel-content-box" });
 			} catch (e) {
@@ -170,23 +170,20 @@ export class Context extends Resource
 	// Bind
 	public bind()
 	{
-		if (Context._fullscreen) {
+		if (Context._fullscreen && Context._fullscreenContext == this) {
 			this._canvas.style.left  = `0px`;
 			this._canvas.style.top  = `0px`;
 			this._canvas.style.width  = `${window.screen.width}px`;
 			this._canvas.style.height  = `${window.screen.height}px`;
 		} else {
 			const rect = this._container.getBoundingClientRect();
-			let padX = this.calcStyleValue("padding-left") + this.calcStyleValue("padding-right");
-			let padY = this.calcStyleValue("padding-top") + this.calcStyleValue("padding-bottom");
-			
 			this._canvas.style.left  = `${window.scrollX + rect.left}px`;
 			this._canvas.style.top  = `${window.scrollY + rect.top}px`;
-			this._canvas.style.width  = `${rect.width + padX}px`;
-			this._canvas.style.height  = `${rect.height + padY}px`;
+			this._canvas.style.width  = `${rect.width}px`;
+			this._canvas.style.height  = `${rect.height}px`;
 		}
 		
-		let size = Context._resizeMap.get(this._container);
+		let size = Context._resizeMap.get(this._container)[1];
 		this._canvas.width = size[0];
 		this._canvas.height = size[1];
 		
@@ -431,7 +428,23 @@ export class Context extends Resource
 				height = entry.contentRect.height;
 			}
 			
-			Context._resizeMap.set(entry.target, [Math.round(width * dpr), Math.round(height * dpr)]);
+			let context = Context._resizeMap.get(entry.target)[0];
+			
+			let padLeft = 0;
+			let padRight = 0;
+			let padTop = 0;
+			let padBottom = 0;
+			
+			if (Context._fullscreenContext != context) {
+				padLeft = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-left"));
+				padRight = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-right"));
+				padTop = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-top"));
+				padBottom = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-bottom"));
+			}
+			
+			Context._resizeMap.set(entry.target, [context, [
+				Math.round((width * dpr) + (padLeft + padRight)),
+				Math.round((height * dpr) + (padTop + padBottom))]]);
 		}
 	}
 	
