@@ -110,6 +110,8 @@ export class Context extends Resource
 			this._container.className = "devon-webgl-canvas-container";
 			this._container.style.width = `${size[0]}px`;
 			this._container.style.height = `${size[1]}px`;
+			this._container.style.display = `block`;
+			this._container.style.zIndex = `-1`;
 			
 			this._canvas = document.createElement("canvas");
 			this._canvas.className = "devon-webgl-canvas-view";
