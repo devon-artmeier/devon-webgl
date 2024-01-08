@@ -1,7 +1,71 @@
-import { Vector4 } from "./tuples";
+import { Vector2, Vector4 } from "./tuples";
 import { Resource } from "../private/resource";
 import { ResourceManager } from "../private/resource-manager";
 import { ContextPool } from "../private/context-pool";
+import { Cull } from "./culling";
+import { Depth } from "./depth";
+import { Matrix } from "./matrix";
+import { Mesh } from "./mesh";
+import { Shader } from "./shader";
+import { Stencil } from "./stencil";
+import { Texture } from "./texture";
+import { Vertex } from "./vertex";
+import { Viewport } from "./viewport";
+
+const fboVertexShader =
+`#version 300 es
+
+layout (location = 0) in vec2 vecFragCoord;
+layout (location = 1) in vec2 vecTexCoord;
+
+out vec2 texCoord;
+
+uniform mat4 projection;
+
+void main(void)
+{
+	texCoord = vecTexCoord;
+	gl_Position = projection *vec4(vecFragCoord, 0, 1);
+}
+`;
+
+const fboFragShader = 
+`#version 300 es
+precision highp float;
+
+in vec2 texCoord;
+out vec4 fragColor;
+uniform sampler2D render;
+
+void main(void)
+{
+	fragColor = texture(render, texCoord);
+}
+`;
+
+class FBOVertex extends Vertex
+{
+	// Constructor
+	constructor(public coord: Vector2<number>, public tex: Vector2<number>)
+		{ super(); }
+
+	// Get data
+	public getData(): readonly number[][]
+	{
+		return [this.coord, this.tex];
+	}
+}
+
+const fboVertices = [
+	new FBOVertex([0, 0], [0, 0]),
+	new FBOVertex([1, 1], [1, 1]),
+	new FBOVertex([1, 0], [1, 0]),
+	new FBOVertex([0, 1], [0, 1])
+];
+
+const fboElements = [
+	0,  1,  2,  1,  0,  3
+];
 
 export class Context extends Resource
 {
@@ -16,6 +80,9 @@ export class Context extends Resource
 	private _currentVBO: WebGLBuffer;
 	private _currentEBO: WebGLBuffer;
 	private _currentVAO: WebGLVertexArrayObject;
+	
+	private _container: HTMLDivElement;
+	private _canvas: HTMLCanvasElement;
 
 	get currentTexture(): WebGLTexture { return this._currentTexture; }
 	get currentShader(): WebGLProgram { return this._currentShader; }
@@ -29,12 +96,101 @@ export class Context extends Resource
 	/**************************/
 	
 	// Constructor
-	constructor(public readonly canvas: HTMLCanvasElement, id: string)
+	constructor(public readonly element: HTMLElement, id: string, size: Vector2<number>)
 	{
 		super(null, id);
+		
+		if (element != null) {
+			ContextPool.contexts.add(id, this);
+				
+			if (size[0] <= 0) size[0] = 1;
+			if (size[1] <= 0) size[1] = 1;
+			
+			this._container = document.createElement("div");
+			this._container.className = "devon-webgl-canvas-container";
+			this._container.style.width = `${size[0]}px`;
+			this._container.style.height = `${size[1]}px`;
+			
+			this._canvas = document.createElement("canvas");
+			this._canvas.className = "devon-webgl-canvas-view";
+			this._canvas.style.position = "absolute";
+			this._container.appendChild(this._canvas);
+			
+			element.replaceWith(this._container);
 
-		this.gl = this.canvas?.getContext("webgl2",
-			{ alpha: true, stencil: true, preserveDrawingBuffer: true });
+			this.gl = this._canvas?.getContext("webgl2",
+				{ alpha: true, stencil: true, preserveDrawingBuffer: true });
+			
+			let oldContext = ContextPool.getBind();
+			ContextPool.bind(this.id);
+			
+			Texture.create("fbo_devon_webgl", size);
+			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
+			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
+			
+			if (oldContext != null) ContextPool.bind(oldContext.id);
+		}
+	}
+	
+	// Bind
+	public bind()
+	{
+		const rect = this._container.getBoundingClientRect();
+		this._canvas.style.left  = `${window.scrollX + rect.left}px`;
+		this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+		this._canvas.style.width  = `${rect.width}px`;
+		this._canvas.style.height  = `${rect.height}px`;
+		
+		const dpr = window.devicePixelRatio;
+		let width = Math.round(rect.width * dpr);
+		let height = Math.round(rect.height * dpr);
+		this._canvas.width = width;
+		this._canvas.height = height;
+		
+		let fboSize = Texture.getSize("fbo_devon_webgl");
+		if (fboSize[0] != width || fboSize[1] != height) {
+			fboSize = [width, height];
+			Texture.createBlank("fbo_devon_webgl", [width, height]);
+		}
+		
+		Texture.setRenderTarget("fbo_devon_webgl");
+		Viewport.set([0, 0], fboSize);
+	}
+	
+	// Finish rendering
+	public render()
+	{
+		this._currentFBO = null;
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+		
+		Viewport.set([0, 0], [this._canvas.width, this._canvas.height]);
+		Depth.disable();
+		Stencil.disable();
+		Stencil.setMask(0xFF);
+		Stencil.setFunction(Stencil.Always, 1, 0xFF);
+		Cull.disable();
+		
+		let projection = Matrix.ortho([0, 0], [1, 1], [0, 1]);
+				
+		Shader.bind("shader_devon_webgl");
+		Shader.setTexture("render", 0);
+		Shader.setMatrix4("projection", projection);
+		
+		Texture.setActive(0, "fbo_devon_webgl");
+		Mesh.draw("mesh_devon_webgl");
+	}
+	
+	// Resize
+	public resize(size: Vector2<number>)
+	{
+		this._container.style.width = `${size[0]}px`;
+		this._container.style.height = `${size[1]}px`;
+	}
+	
+	// Get size
+	public getSize(): Vector2<number>
+	{
+		return Texture.getSize("fbo_devon_webgl");
 	}
 
 	// Bind texture
@@ -58,7 +214,9 @@ export class Context extends Resource
 	// Bind framebuffer
 	public bindFramebuffer(fbo: WebGLFramebuffer)
 	{
-		if (this._currentFBO != fbo) {
+		if (fbo == null) {
+			Texture.setRenderTarget("fbo_devon_webgl");
+		} else if (this._currentFBO != fbo) {
 			this._currentFBO = fbo;
 			this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fbo);
 		}
@@ -170,19 +328,16 @@ export class Context extends Resource
 	/********************/
 
 	// Create context
-	public static create(id: string, canvas: HTMLCanvasElement)
+	public static create(id: string, element: HTMLElement, size: Vector2<number>)
 	{
-		let manager = ContextPool.contexts;
-		let context = new Context(canvas, id);
-		if (context.gl != null) {
-			manager.add(id, new Context(canvas, id));
-		}
+		new Context(element, id, size);
 	}
 
 	// Bind
 	public static bind(id: string)
 	{
 		ContextPool.bind(id);
+		ContextPool.getBind()?.bind();
 	}
 	
 	// Clear
@@ -194,6 +349,24 @@ export class Context extends Resource
 			gl.clearColor(... color);
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 		}
+	}
+	
+	// Finish rendering
+	public static render()
+	{
+		ContextPool.getBind()?.render();
+	}
+	
+	// Resize canvas
+	public static resize(size: Vector2<number>)
+	{
+		ContextPool.getBind()?.resize(size);
+	}
+	
+	// Set render size
+	public static getSize(): Vector2<number>
+	{
+		return ContextPool.getBind()?.getSize();
 	}
 	
 	// Delete context

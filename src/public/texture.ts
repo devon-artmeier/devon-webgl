@@ -156,7 +156,7 @@ export class Texture extends Resource
 		this._size = size;
 		
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0], this._size[1], 0,
-			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(size[0] * size[1] * 4));
+			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._size[0] * this._size[1] * 4));
 			
 		if (this._fbo != null) {
 			let prevFBO = this._context.currentFBO;
@@ -256,6 +256,7 @@ export class Texture extends Resource
 	// Get filter
 	public static getFilter(textureID: string): Vector2<number>
 	{
+		console.log(this.getTexture(textureID));
 		return this.getTexture(textureID)?.filter;
 	}
 	
