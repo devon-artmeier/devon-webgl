@@ -1,4 +1,4 @@
-import { Vector2, Vector4 } from "./tuples";
+import { Vector2 } from "./tuples";
 import { Resource } from "../private/resource";
 import { Context } from "./context";
 import { ContextPool } from "../private/context-pool";
@@ -10,7 +10,7 @@ export class Texture extends Resource
 	private _wrap: Vector2<number> = [Texture.Repeat, Texture.Repeat];
 	private _fbo: WebGLFramebuffer;
 	private _depthBuffer: WebGLTexture;
-	private _createdMipmap: boolean;
+	private _hasMipmap: boolean;
 	
 	get size(): Vector2<number> { return [this._size[0], this._size[1]]; }
 	get width(): number { return this._size[0]; }
@@ -70,7 +70,7 @@ export class Texture extends Resource
 			gl.NEAREST, gl.LINEAR,
 			gl.NEAREST_MIPMAP_LINEAR, gl.LINEAR_MIPMAP_LINEAR,
 		];
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filters[filter + (this._createdMipmap ? 2 : 0)]);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filters[filter + (this._hasMipmap ? 2 : 0)]);
 	}
 
 	// Set magnification filter
@@ -195,7 +195,7 @@ export class Texture extends Resource
 	// Set mipmap creation flag
 	private setMipmapCreate(flag: boolean)
 	{
-		this._createdMipmap = flag;
+		this._hasMipmap = flag;
 		this.setMinFilter(this._filter[0]);
 	}
 

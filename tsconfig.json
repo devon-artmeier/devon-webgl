@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "noImplicitAny": true,
-    "module": "es6",
-    "target": "es6",
-    "allowJs": true,
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2019",
+    "declaration": true,
+    "outDir": "./dist",
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules/**"],
