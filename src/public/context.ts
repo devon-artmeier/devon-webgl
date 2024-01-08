@@ -57,10 +57,10 @@ class FBOVertex extends Vertex
 }
 
 const fboVertices = [
-	new FBOVertex([0, 0], [0, 0]),
-	new FBOVertex([1, 1], [1, 1]),
-	new FBOVertex([1, 0], [1, 0]),
-	new FBOVertex([0, 1], [0, 1])
+	new FBOVertex([0, 0], [0, 1]),
+	new FBOVertex([1, 1], [1, 0]),
+	new FBOVertex([1, 0], [1, 1]),
+	new FBOVertex([0, 1], [0, 0])
 ];
 
 const fboElements = [
@@ -129,6 +129,7 @@ export class Context extends Resource
 			Texture.create("fbo_devon_webgl", size);
 			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
 			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
+			this.bind();
 			
 			if (oldContext != null) ContextPool.bind(oldContext.id);
 		}
