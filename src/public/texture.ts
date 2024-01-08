@@ -155,6 +155,12 @@ export class Texture extends Resource
 		
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size[0], size[1], 0, gl.RGBA, gl.UNSIGNED_BYTE,
 			new Uint8Array(size[0] * size[1] * 4));
+			
+		if (this._depthBuffer != null) {
+			this._context.bindTexture(this._depthBuffer);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._size[0], this._size[1], 0,
+				gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
+		}
 
 		this._size = size;
 		this.setMipmapCreate(false);
