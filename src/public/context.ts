@@ -69,12 +69,6 @@ const fboElements = [
 
 export class Context extends Resource
 {
-	private static _resizeMap = new Map<HTMLDivElement, [Context, Vector2<number>]>();
-	private static _resizeObserver = new ResizeObserver(this.onResize);
-	private static _fullscreen: boolean;
-	private static _fullscreenListener: boolean;
-	private static _fullscreenContext: Context;
-	
 	public readonly gl: WebGL2RenderingContext;
 	public readonly textures = new ResourceManager();
 	public readonly shaders = new ResourceManager();
@@ -129,16 +123,6 @@ export class Context extends Resource
 			this.gl = this._canvas?.getContext("webgl2",
 				{ alpha: true, stencil: true, preserveDrawingBuffer: true });
 			
-			if (!Context._fullscreenListener) {
-				addEventListener("fullscreenchange", function() {
-					Context._fullscreen = !Context._fullscreen;
-					if (!Context._fullscreen) {
-						Context._fullscreenContext = null;
-					}
-				});
-				Context._fullscreenListener = true;
-			}
-			
 			let oldContext = ContextPool.getBind();
 			ContextPool.bind(this.id);
 			
@@ -150,47 +134,28 @@ export class Context extends Resource
 			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
 			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
 			
-			Context._resizeMap.set(this._container, [this, size]);
-			try {
-				Context._resizeObserver.observe(this._container, { box: "device-pixel-content-box" });
-			} catch (e) {
-				Context._resizeObserver.observe(this._container, { box: "content-box" });
-			}
-			
 			if (oldContext != null) ContextPool.bind(oldContext.id);
 		}
-	}
-	
-	// Calculate style value in container
-	private calcStyleValue(property)
-	{
-		return window.getComputedStyle(this._container, null).getPropertyValue(property);
 	}
 	
 	// Bind
 	public bind()
 	{
-		if (Context._fullscreen && Context._fullscreenContext == this) {
-			this._canvas.style.left  = `0px`;
-			this._canvas.style.top  = `0px`;
-			this._canvas.style.width  = `${window.screen.width}px`;
-			this._canvas.style.height  = `${window.screen.height}px`;
-		} else {
-			const rect = this._container.getBoundingClientRect();
-			this._canvas.style.left  = `${window.scrollX + rect.left}px`;
-			this._canvas.style.top  = `${window.scrollY + rect.top}px`;
-			this._canvas.style.width  = `${rect.width}px`;
-			this._canvas.style.height  = `${rect.height}px`;
-		}
+		const rect = this._container.getBoundingClientRect();
 		
-		let size = Context._resizeMap.get(this._container)[1];
-		this._canvas.width = size[0];
-		this._canvas.height = size[1];
+		this._canvas.style.left  = `${window.scrollX + rect.left}px`;
+		this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+		this._canvas.style.width  = `${rect.width}px`;
+		this._canvas.style.height  = `${rect.height}px`;
+		
+		let dpr = window.devicePixelRatio;
+		this._canvas.width = Math.round(rect.width * dpr);
+		this._canvas.height = Math.round(rect.height * dpr);
 		
 		let fboSize = Texture.getSize("fbo_devon_webgl");
-		if (fboSize[0] != size[0] || fboSize[1] != size[1]) {
-			fboSize = [size[0], size[1]];
-			Texture.createBlank("fbo_devon_webgl", [size[0], size[1]]);
+		if (fboSize[0] != this._canvas.width || fboSize[1] != this._canvas.height) {
+			fboSize = [this._canvas.width, this._canvas.height];
+			Texture.createBlank("fbo_devon_webgl", [this._canvas.width, this._canvas.height]);
 		}
 		
 		Texture.setRenderTarget("fbo_devon_webgl");
@@ -403,51 +368,6 @@ export class Context extends Resource
 		ContextPool.getBind()?.resize(size);
 	}
 	
-	// Resize event
-	private static onResize(entries)
-	{
-		let width;
-		let height;
-		let dpr = window.devicePixelRatio;
-		
-		for (const entry of entries) {
-			if (entry.devicePixelContentBoxSize) {
-				width = entry.devicePixelContentBoxSize[0].inlineSize;
-				height = entry.devicePixelContentBoxSize[0].blockSize;
-				dpr = 1;
-			} else if (entry.contentBoxSize) {
-				if (entry.contentBoxSize[0]) {
-					width = entry.contentBoxSize[0].inlineSize;
-					height = entry.contentBoxSize[0].blockSize;
-				} else {
-					width = entry.contentBoxSize.inlineSize;
-					height = entry.contentBoxSize.blockSize;
-				}
-			} else {
-				width = entry.contentRect.width;
-				height = entry.contentRect.height;
-			}
-			
-			let context = Context._resizeMap.get(entry.target)[0];
-			
-			let padLeft = 0;
-			let padRight = 0;
-			let padTop = 0;
-			let padBottom = 0;
-			
-			if (Context._fullscreenContext != context) {
-				padLeft = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-left"));
-				padRight = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-right"));
-				padTop = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-top"));
-				padBottom = parseFloat(window.getComputedStyle(entry.target, null).getPropertyValue("padding-bottom"));
-			}
-			
-			Context._resizeMap.set(entry.target, [context, [
-				Math.round((width * dpr) + (padLeft + padRight)),
-				Math.round((height * dpr) + (padTop + padBottom))]]);
-		}
-	}
-	
 	// Set render size
 	public static getSize(): Vector2<number>
 	{
@@ -460,7 +380,6 @@ export class Context extends Resource
 		let context = ContextPool.get(id);
 		if (context != null) {
 			context._container.requestFullscreen();
-			this._fullscreenContext = context;
 		}
 	}
 	
