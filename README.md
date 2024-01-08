@@ -17,6 +17,8 @@ This is a framework for WebGL that I wrote in TypeScript for use with my persona
 * Depth testing
 * Stencil testing
 * Culling
+* Fullscreen
+* Canvas resizing
 
 ## Planned features
 
