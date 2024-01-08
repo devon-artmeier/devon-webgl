@@ -138,9 +138,10 @@ export class Texture extends Resource
 				gl.TEXTURE_2D, this._texture, 0);
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT,
 				gl.TEXTURE_2D, this._depthBuffer, 0);
+		} else {
+			this._context.bindFramebuffer(this._fbo);
 		}
 		
-		this._context.bindFramebuffer(this._fbo);
 		this.setMipmapCreate(false);
 	}
 	
@@ -152,18 +153,19 @@ export class Texture extends Resource
 
 		if (size[0] <= 0) size[0] = 1;
 		if (size[1] <= 0) size[1] = 1;
-		
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size[0], size[1], 0, gl.RGBA, gl.UNSIGNED_BYTE,
-			new Uint8Array(size[0] * size[1] * 4));
-			
-		if (this._depthBuffer != null) {
-			this._context.bindTexture(this._depthBuffer);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._size[0], this._size[1], 0,
-				gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
-		}
-
 		this._size = size;
-		this.setMipmapCreate(false);
+		
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0], this._size[1], 0,
+			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(size[0] * size[1] * 4));
+			
+		if (this._fbo != null) {
+			let prevFBO = this._context.currentFBO;
+			this._fbo = null;
+			this.setRenderTarget();
+			this._context.bindFramebuffer(prevFBO);
+		} else {
+			this.setMipmapCreate(false);
+		}
 	}
 	
 	// Load image file
