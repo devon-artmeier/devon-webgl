@@ -71,6 +71,9 @@ export class Context extends Resource
 {
 	private static _resizeMap = new Map();
 	private static _resizeObserver = new ResizeObserver(this.onResize);
+	private static _fullscreen: boolean;
+	private static _fullscreenListener: boolean;
+	private static _fullscreenContext: Context;
 	
 	public readonly gl: WebGL2RenderingContext;
 	public readonly textures = new ResourceManager();
@@ -126,6 +129,16 @@ export class Context extends Resource
 			this.gl = this._canvas?.getContext("webgl2",
 				{ alpha: true, stencil: true, preserveDrawingBuffer: true });
 			
+			if (!Context._fullscreenListener) {
+				addEventListener("fullscreenchange", function() {
+					Context._fullscreen = !Context._fullscreen;
+					if (!Context._fullscreen) {
+						Context._fullscreenContext = null;
+					}
+				});
+				Context._fullscreenListener = true;
+			}
+			
 			let oldContext = ContextPool.getBind();
 			ContextPool.bind(this.id);
 			
@@ -151,11 +164,18 @@ export class Context extends Resource
 	// Bind
 	public bind()
 	{
-		const rect = this._container.getBoundingClientRect();
-		this._canvas.style.left  = `${window.scrollX + rect.left}px`;
-		this._canvas.style.top  = `${window.scrollY + rect.top}px`;
-		this._canvas.style.width  = `${rect.width}px`;
-		this._canvas.style.height  = `${rect.height}px`;
+		if (Context._fullscreen) {
+			this._canvas.style.left  = `0px`;
+			this._canvas.style.top  = `0px`;
+			this._canvas.style.width  = `${window.screen.width}px`;
+			this._canvas.style.height  = `${window.screen.height}px`;
+		} else {
+			const rect = this._container.getBoundingClientRect();
+			this._canvas.style.left  = `${window.scrollX + rect.left}px`;
+			this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+			this._canvas.style.width  = `${rect.width}px`;
+			this._canvas.style.height  = `${rect.height}px`;
+		}
 		
 		let size = Context._resizeMap.get(this._container);
 		this._canvas.width = size[0];
@@ -410,6 +430,16 @@ export class Context extends Resource
 	public static getSize(): Vector2<number>
 	{
 		return ContextPool.getBind()?.getSize();
+	}
+	
+	// Go fullscreen
+	public static setFullscreen(id: string)
+	{
+		let context = ContextPool.get(id);
+		if (context != null) {
+			context._container.requestFullscreen();
+			this._fullscreenContext = context;
+		}
 	}
 	
 	// Delete context
