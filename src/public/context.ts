@@ -161,6 +161,12 @@ export class Context extends Resource
 		}
 	}
 	
+	// Calculate style value in container
+	private calcStyleValue(property)
+	{
+		return window.getComputedStyle(this._container, null).getPropertyValue(property);
+	}
+	
 	// Bind
 	public bind()
 	{
@@ -171,10 +177,13 @@ export class Context extends Resource
 			this._canvas.style.height  = `${window.screen.height}px`;
 		} else {
 			const rect = this._container.getBoundingClientRect();
+			let padX = this.calcStyleValue("padding-left") + this.calcStyleValue("padding-right");
+			let padY = this.calcStyleValue("padding-top") + this.calcStyleValue("padding-bottom");
+			
 			this._canvas.style.left  = `${window.scrollX + rect.left}px`;
 			this._canvas.style.top  = `${window.scrollY + rect.top}px`;
-			this._canvas.style.width  = `${rect.width}px`;
-			this._canvas.style.height  = `${rect.height}px`;
+			this._canvas.style.width  = `${rect.width + padX}px`;
+			this._canvas.style.height  = `${rect.height + padY}px`;
 		}
 		
 		let size = Context._resizeMap.get(this._container);
