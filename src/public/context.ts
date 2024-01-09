@@ -384,6 +384,18 @@ export class Context extends Resource
 		}
 	}
 	
+	// Get container
+	public static getContainer(id: string) : HTMLDivElement
+	{
+		return ContextPool.get(id)?._container;
+	}
+	
+	// Get canvas
+	public static getCanvas(id: string): HTMLCanvasElement
+	{
+		return ContextPool.get(id)?._canvas;
+	}
+	
 	// Delete context
 	public static delete(id: string)
 	{
