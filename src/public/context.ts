@@ -69,6 +69,11 @@ const fboElements = [
 
 export class Context extends Resource
 {
+	private static _fullscreen: boolean;
+	private static _fullscreenInit: boolean;
+	private static _fullscreenChange: Context;
+	private static _fullscreenContext: Context;
+	
 	public readonly gl: WebGL2RenderingContext;
 	public readonly textures = new ResourceManager();
 	public readonly shaders = new ResourceManager();
@@ -132,6 +137,18 @@ export class Context extends Resource
 			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
 			
 			ContextPool.bind = oldContext;
+			
+			if (!Context._fullscreenInit) {
+				document.addEventListener("fullscreenchange", function () {
+					Context._fullscreen = !Context._fullscreen;
+					if (!Context._fullscreen) {
+						Context._fullscreenContext = null;
+					} else {
+						Context._fullscreenContext = Context._fullscreenChange;
+					}
+				});
+				Context._fullscreenInit = true;
+			}
 		}
 	}
 	
@@ -144,8 +161,13 @@ export class Context extends Resource
 		this._canvas.width = Math.round(rect.width * dpr);
 		this._canvas.height = Math.round(rect.height * dpr);
 		
-		this._canvas.style.left  = `${window.scrollX + rect.left}px`;
-		this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+		if (Context._fullscreenContext != this) {
+			this._canvas.style.left  = `${window.scrollX + rect.left}px`;
+			this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+		} else {
+			this._canvas.style.left  = `${rect.left}px`;
+			this._canvas.style.top  = `${rect.top}px`;
+		}
 		this._canvas.style.width  = `${this._canvas.width / dpr}px`;
 		this._canvas.style.height  = `${this._canvas.height / dpr}px`;
 		
@@ -379,6 +401,7 @@ export class Context extends Resource
 	{
 		let context = ContextPool.get(id);
 		if (context != null) {
+			this._fullscreenChange = context;
 			context._container.requestFullscreen();
 		}
 	}
