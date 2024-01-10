@@ -169,25 +169,43 @@ export class Texture extends Resource
 	}
 	
 	// Load image file
-	public loadImage(path: string)
+	public loadImageFile(path: string)
 	{
 		let image = new Image();
 		image.crossOrigin = "anonymous";
 		image.src = path;
 			
 		image.onload = () => {
-			if (this._texture != null) {
-				let gl = this._context.gl;
-
-				gl.bindTexture(gl.TEXTURE_2D, this._texture);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-				this._size = [image.width, image.height];
-				this.setMipmapCreate(false);
-
-				gl.bindTexture(gl.TEXTURE_2D, this._context.currentTexture);
-			}
+			let gl = this._context.gl;
+			let oldTexture = this._context.currentTexture;
+			
+			this.loadImage(image);
+			gl.bindTexture(gl.TEXTURE_2D, oldTexture);
 		};
+	}
+	
+	// Load image
+	public loadImage(image: HTMLImageElement)
+	{
+		let gl = this._context.gl;
+
+		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+		this._size = [image.width, image.height];
+		this.setMipmapCreate(false);
+	}
+	
+	// Load video frame
+	public loadVideoFrame(video: HTMLVideoElement)
+	{
+		let gl = this._context.gl;
+
+		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+
+		this._size = [video.width, video.height];
+		this.setMipmapCreate(false);
 	}
 	
 	// Create mipmap
@@ -356,10 +374,22 @@ export class Texture extends Resource
 		this.getTexture(textureID)?.createBlank(size);
 	}
 	
-	// Load image
-	public static loadImage(textureID: string, path: string)
+	// Load image file
+	public static loadImageFile(textureID: string, path: string)
 	{
-		this.getTexture(textureID)?.loadImage(path);
+		this.getTexture(textureID)?.loadImageFile(path);
+	}
+	
+	// Load image
+	public static loadImage(textureID: string, image: HTMLImageElement)
+	{
+		this.getTexture(textureID)?.loadImage(image);
+	}
+	
+	// Load video frame
+	public static loadVideoFrame(textureID: string, video: HTMLVideoElement)
+	{
+		this.getTexture(textureID)?.loadVideoFrame(video);
 	}
 	
 	// Create mipmap
