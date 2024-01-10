@@ -7,7 +7,7 @@ export class Texture extends Resource
 {
 	private _texture: WebGLTexture;
 	private _filter: Vector2<number> = [Texture.Bilinear, Texture.Bilinear];
-	private _wrap: Vector2<number> = [Texture.Repeat, Texture.Repeat];
+	private _wrap: Vector2<number> = [Texture.Clamp, Texture.Clamp];
 	private _fbo: WebGLFramebuffer;
 	private _depthBuffer: WebGLTexture;
 	private _hasMipmap: boolean;
@@ -46,8 +46,8 @@ export class Texture extends Resource
 		
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
 		this.createBlank(this._size);
 	}
