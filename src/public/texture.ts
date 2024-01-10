@@ -6,6 +6,7 @@ import { ContextPool } from "../private/context-pool";
 export class Texture extends Resource
 {
 	private _texture: WebGLTexture;
+	private _size: Vector2<number> = [0, 0];
 	private _filter: Vector2<number> = [Texture.Bilinear, Texture.Bilinear];
 	private _wrap: Vector2<number> = [Texture.Clamp, Texture.Clamp];
 	private _fbo: WebGLFramebuffer;
@@ -36,7 +37,7 @@ export class Texture extends Resource
 	/**************************/
 	
 	// Constructor
-	private constructor(context: Context, id: string, private _size: Vector2<number>)
+	private constructor(context: Context, id: string, size: Vector2<number>)
 	{
 		super(context, id);
 		let gl = this._context.gl;
@@ -49,7 +50,7 @@ export class Texture extends Resource
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-		this.createBlank(this._size);
+		this.createBlank(size);
 	}
 	
 	// Set filter
@@ -127,7 +128,9 @@ export class Texture extends Resource
 
 		if (this._fbo == null) {
 			this._fbo = gl.createFramebuffer();
-			this._depthBuffer = gl.createTexture();
+			if (this._depthBuffer == null) {
+				this._depthBuffer = gl.createTexture();
+			}
 
 			this._context.bindTexture(this._depthBuffer);
 			gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, this._size[0], this._size[1], 0,
@@ -153,13 +156,20 @@ export class Texture extends Resource
 
 		if (size[0] <= 0) size[0] = 1;
 		if (size[1] <= 0) size[1] = 1;
-		this._size = size;
 		
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._size[0], this._size[1], 0,
-			gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this._size[0] * this._size[1] * 4));
+		if (size[0] != this._size[0] || size[1] != this._size[1]) {
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size[0], size[1], 0,
+				gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(size[0] * size[1] * 4));
+		} else {
+			gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, size[0], size[1],
+				gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(size[0] * size[1] * 4));
+		}
+		
+		this._size = size;
 			
 		if (this._fbo != null) {
 			let prevFBO = this._context.currentFBO;
+			this._context.deleteFramebuffer(this._fbo);
 			this._fbo = null;
 			this.setRenderTarget();
 			this._context.bindFramebuffer(prevFBO);
@@ -186,11 +196,16 @@ export class Texture extends Resource
 	public loadImage(image: HTMLImageElement)
 	{
 		let gl = this._context.gl;
-
 		this._context.bindTexture(this._texture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-		this._size = [image.width, image.height];
 		
+		if (image.width != this._size[0] || image.height != this._size[1]) {
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+		} else {
+			gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, image.width, image.height,
+				gl.RGBA, gl.UNSIGNED_BYTE, image);
+		}
+		
+		this._size = [image.width, image.height];
 		this.setMipmapCreate(false);
 	}
 	
@@ -199,11 +214,16 @@ export class Texture extends Resource
 	{
 		if (video.videoWidth != 0 && video.videoHeight != 0) {
 			let gl = this._context.gl;
-
 			this._context.bindTexture(this._texture);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
-			this._size = [video.videoWidth, video.videoHeight];
 			
+			if (video.videoWidth != this._size[0] || video.videoHeight != this._size[1]) {
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+			} else {
+				gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, video.videoWidth, video.videoHeight,
+					gl.RGBA, gl.UNSIGNED_BYTE, video);
+			}
+			
+			this._size = [video.videoWidth, video.videoHeight];
 			this.setMipmapCreate(false);
 		}
 	}
