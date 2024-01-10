@@ -176,11 +176,9 @@ export class Texture extends Resource
 		image.src = path;
 			
 		image.onload = () => {
-			let gl = this._context.gl;
 			let oldTexture = this._context.currentTexture;
-			
 			this.loadImage(image);
-			gl.bindTexture(gl.TEXTURE_2D, oldTexture);
+			this._context.bindTexture(oldTexture);
 		};
 	}
 	
@@ -189,23 +187,25 @@ export class Texture extends Resource
 	{
 		let gl = this._context.gl;
 
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
+		this._context.bindTexture(this._texture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
 		this._size = [image.width, image.height];
+		
 		this.setMipmapCreate(false);
 	}
 	
 	// Load video frame
 	public loadVideoFrame(video: HTMLVideoElement)
 	{
-		let gl = this._context.gl;
+		if (video.videoWidth != 0 && video.videoHeight != 0) {
+			let gl = this._context.gl;
 
-		gl.bindTexture(gl.TEXTURE_2D, this._texture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
-
-		this._size = [video.width, video.height];
-		this.setMipmapCreate(false);
+			this._context.bindTexture(this._texture);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+			this._size = [video.videoWidth, video.videoHeight];
+			
+			this.setMipmapCreate(false);
+		}
 	}
 	
 	// Create mipmap
@@ -213,7 +213,6 @@ export class Texture extends Resource
 	{
 		let gl = this._context.gl;
 		this._context.bindTexture(this._texture);
-
 		gl.generateMipmap(gl.TEXTURE_2D);
 		this.setMipmapCreate(true);
 	}
@@ -352,6 +351,18 @@ export class Texture extends Resource
 			let gl = context.gl;
 			gl.activeTexture(gl.TEXTURE1 + num);
 			context.bindTexture(this.getTexture(textureID)?._texture);
+			gl.activeTexture(gl.TEXTURE0);
+		}
+	}
+	
+	// Unset active texture number
+	public static unsetActive(num: number)
+	{
+		let context = ContextPool.bind;
+		if (context != null) {
+			let gl = context.gl;
+			gl.activeTexture(gl.TEXTURE1 + num);
+			context.bindTexture(null);
 			gl.activeTexture(gl.TEXTURE0);
 		}
 	}

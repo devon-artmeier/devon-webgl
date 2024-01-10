@@ -25,7 +25,7 @@ uniform mat4 projection;
 void main(void)
 {
 	texCoord = vecTexCoord;
-	gl_Position = projection *vec4(vecFragCoord, 0, 1);
+	gl_Position = projection * vec4(vecFragCoord, 0, 1);
 }
 `;
 
@@ -35,11 +35,11 @@ precision highp float;
 
 in vec2 texCoord;
 out vec4 fragColor;
-uniform sampler2D render;
+uniform sampler2D renderTexture;
 
 void main(void)
 {
-	fragColor = texture(render, texCoord);
+	fragColor = texture(renderTexture, texCoord);
 }
 `;
 
@@ -156,7 +156,6 @@ export class Context extends Resource
 		}
 		
 		Texture.setRenderTarget("fbo_devon_webgl");
-		Viewport.set([0, 0], fboSize);
 	}
 	
 	// Draw
@@ -173,12 +172,12 @@ export class Context extends Resource
 		Cull.disable();
 		
 		let projection = Matrix.ortho([0, 0], [1, 1], [0, 1]);
-				
+		
 		Shader.bind("shader_devon_webgl");
-		Shader.setTexture("render", 0);
+		Shader.setTexture("renderTexture", -1);
 		Shader.setMatrix4("projection", projection);
 		
-		Texture.setActive(0, "fbo_devon_webgl");
+		Texture.setActive(-1, "fbo_devon_webgl");
 		Mesh.draw("mesh_devon_webgl");
 	}
 	
