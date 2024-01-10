@@ -138,12 +138,11 @@ export class Context extends Resource
 			ContextPool.bind = oldContext;
 			
 			if (!Context._fullscreenInit) {
-				document.addEventListener("fullscreenchange", function () {
+				document.addEventListener("fullscreenchange", function ()
+				{
 					Context._fullscreen = !Context._fullscreen;
 					if (!Context._fullscreen) {
 						window.scrollTo(Context._savedScroll[0], Context._savedScroll[1]);
-					} else {
-						window.scrollTo(0, 0);
 					}
 				});
 				Context._fullscreenInit = true;
@@ -160,8 +159,13 @@ export class Context extends Resource
 		this._canvas.width = Math.round(rect.width * dpr);
 		this._canvas.height = Math.round(rect.height * dpr);
 		
-		this._canvas.style.left  = `${window.scrollX + rect.left}px`;
-		this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+		if (!Context._fullscreen) {
+			this._canvas.style.left  = `${window.scrollX + rect.left}px`;
+			this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+		} else {
+			this._canvas.style.left  = `${rect.left}px`;
+			this._canvas.style.top  = `${rect.top}px`;
+		}
 		this._canvas.style.width  = `${this._canvas.width / dpr}px`;
 		this._canvas.style.height  = `${this._canvas.height / dpr}px`;
 		
@@ -395,8 +399,8 @@ export class Context extends Resource
 	{
 		let context = ContextPool.get(id);
 		if (context != null) {
-			this._savedScroll = [window.scrollX, window.scrollY];
 			context._container.requestFullscreen();
+			this._savedScroll = [window.scrollX, window.scrollY];
 		}
 	}
 	
