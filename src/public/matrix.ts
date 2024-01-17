@@ -1,4 +1,4 @@
-import { Matrix4, Vector2, Vector3 } from "./tuples";
+import { Matrix4, Vector2, Vector3, Vector4 } from "./tuples";
 import { Vector } from "./vector"
 
 export class Matrix
@@ -32,8 +32,19 @@ export class Matrix
 			0, 0, -(2 * z[1] * z[0]) * farMNear, 0
 		];
 	}
+	
+	// Multiply matrix with 4D vector
+	public static multiplyVector(m: Matrix4<number>, v: Vector4<number>): Vector4<number>
+	{
+		return [
+			(m[0] * v[0]) + (m[4] * v[1]) + (m[8]  * v[2]) + (m[12] * v[3]),
+			(m[1] * v[0]) + (m[5] * v[1]) + (m[9]  * v[2]) + (m[13] * v[3]),
+			(m[2] * v[0]) + (m[6] * v[1]) + (m[10] * v[2]) + (m[14] * v[3]),
+			(m[3] * v[0]) + (m[7] * v[1]) + (m[11] * v[2]) + (m[15] * v[3])
+		];
+	}
 
-	// Multiply matrix
+	// Multiply matrix with matrix
 	public static multiply(a: Matrix4<number>, b: Matrix4<number>): Matrix4<number>
 	{
 		return [
@@ -214,8 +225,8 @@ export class Matrix
 		return this.scale([1, 1, scale]);
 	}
 
-	// Generate 3D model matrix
-	public static model3D(translate: Vector3<number>, rotate: Vector3<number>, scale: Vector3<number>): Matrix4<number>
+	// Generate 3D transformation matrix
+	public static transform3D(translate: Vector3<number>, rotate: Vector3<number>, scale: Vector3<number>): Matrix4<number>
 	{
 		let matrix = this.translate(translate);
 		matrix = this.multiply(matrix, this.rotate(rotate));
@@ -223,8 +234,8 @@ export class Matrix
 		return matrix;
 	}
 
-	// Generate 2D model matrix
-	public static model2D(translate: Vector2<number>, rotate: number, scale: Vector2<number>): Matrix4<number>
+	// Generate 2D transformation matrix
+	public static transform2D(translate: Vector2<number>, rotate: number, scale: Vector2<number>): Matrix4<number>
 	{
 		let matrix = this.translate2D(translate);
 		matrix = this.multiply(matrix, this.rotate2D(rotate));

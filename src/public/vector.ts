@@ -1,4 +1,4 @@
-import { Matrix4, Vector2, Vector3, Vector4 } from "./tuples";
+import { Vector2, Vector3, Vector4 } from "./tuples";
 
 export class Vector
 {
@@ -121,17 +121,6 @@ export class Vector
 			(v1[1] * v2[2]) - (v1[2] * v2[1]),
 			(v1[2] * v2[0]) - (v1[0] * v2[2]),
 			(v1[0] * v2[1]) - (v1[1] * v2[0])
-		];
-	}
-	
-	// Multiply 4D vector with matrix
-	public static multiply4Matrix(v: Vector4<number>, m: Matrix4<number>): Vector4<number>
-	{
-		return [
-			(m[0] * v[0]) + (m[4] * v[1]) + (m[8]  * v[2]) + (m[12] * v[3]),
-			(m[1] * v[0]) + (m[5] * v[1]) + (m[9]  * v[2]) + (m[13] * v[3]),
-			(m[2] * v[0]) + (m[6] * v[1]) + (m[10] * v[2]) + (m[14] * v[3]),
-			(m[3] * v[0]) + (m[7] * v[1]) + (m[11] * v[2]) + (m[15] * v[3])
 		];
 	}
 }
