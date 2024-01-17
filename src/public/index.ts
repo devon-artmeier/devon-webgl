@@ -9,5 +9,6 @@ export * from "./shader"
 export * from "./stencil"
 export * from "./texture"
 export * from "./tuples";
+export * from "./vector";
 export * from "./vertex";
 export * from "./viewport";
