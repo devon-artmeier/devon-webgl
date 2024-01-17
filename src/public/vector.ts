@@ -1,8 +1,43 @@
 import { Matrix4, Vector2, Vector3, Vector4 } from "./tuples";
-import { Matrix } from "./matrix"
 
 export class Vector
 {
+	// Add 2D vectors
+	public static add2(v1: Vector2<number>, v2: Vector2<number>): Vector2<number>
+	{
+		return [v1[0] + v2[0], v1[1] + v2[1]];
+	}
+	
+	// Add 3D vectors
+	public static add3(v1: Vector3<number>, v2: Vector3<number>): Vector3<number>
+	{
+		return [v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]];
+	}
+	
+	// Add 4D vectors
+	public static add4(v1: Vector4<number>, v2: Vector4<number>): Vector4<number>
+	{
+		return [v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2], v1[3] + v2[3]];
+	}
+	
+	// Subtract 2D vectors
+	public static sub2(v1: Vector2<number>, v2: Vector2<number>): Vector2<number>
+	{
+		return [v1[0] - v2[0], v1[1] - v2[1]];
+	}
+	
+	// Subtract 3D vectors
+	public static sub3(v1: Vector3<number>, v2: Vector3<number>): Vector3<number>
+	{
+		return [v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]];
+	}
+	
+	// Subtract 4D vectors
+	public static sub4(v1: Vector4<number>, v2: Vector4<number>): Vector4<number>
+	{
+		return [v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2], v1[3] - v2[3]];
+	}
+	
 	// Convert 2D vector to 3D vector
 	public static convert2To3(v: Vector2<number>, val: number): Vector3<number>
 	{
