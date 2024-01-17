@@ -1,11 +1,8 @@
 import { Matrix4, Vector2, Vector3 } from "./tuples";
+import { Vector } from "./vector"
 
 export class Matrix
 {
-	/********************/
-	/* STATIC FUNCTIONS */
-	/********************/
-
 	// Generate orthographic projection matrix 
 	public static ortho(pos: Vector2<number>, res: Vector2<number>, z: Vector2<number>): Matrix4<number>
 	{
@@ -55,43 +52,21 @@ export class Matrix
 			(a[0] * b[12]) + (a[4] * b[13]) + (a[8]  * b[14]) + (a[12] * b[15]),
 			(a[1] * b[12]) + (a[5] * b[13]) + (a[9]  * b[14]) + (a[13] * b[15]),
 			(a[2] * b[12]) + (a[6] * b[13]) + (a[10] * b[14]) + (a[14] * b[15]),
-			(a[3] * b[12]) + (a[7] * b[13]) + (a[11] * b[14]) + (a[15] * b[15])];
-	}
-
-	// Get dot product of vectors
-	private static vectorDot(v1: Vector3<number>, v2: Vector3<number>): number
-	{
-		return (v1[0] * v2[0]) + (v1[1] * v2[1]) + (v1[2] * v2[2]);
-	}
-
-	// Get cross product of vectors
-	private static vectorCross(v1: Vector3<number>, v2: Vector3<number>): Vector3<number>
-	{
-		return [
-			(v1[1] * v2[2]) - (v1[2] * v2[1]),
-			(v1[2] * v2[0]) - (v1[0] * v2[2]),
-			(v1[0] * v2[1]) - (v1[1] * v2[0])
+			(a[3] * b[12]) + (a[7] * b[13]) + (a[11] * b[14]) + (a[15] * b[15])
 		];
-	}
-
-	// Normalize vector
-	private static vectorNormalize(v: Vector3<number>): Vector3<number>
-	{
-		let length = Math.sqrt(this.vectorDot([v[0], v[1], v[2]], [v[0], v[1], v[2]]));
-		return [v[0] / length, v[1] / length, v[2] / length];
 	}
 
 	// Generate 3D view matrix
 	public static view3D(eye: Vector3<number>, at: Vector3<number>, up: Vector3<number>): Matrix4<number>
 	{
-		let z = this.vectorNormalize([eye[0] - at[0], eye[1] - at[1], eye[2] - at[2]]);
-		let crossZ = this.vectorCross([up[0], up[1], up[2]], [z[0], z[1], z[2]]);
-		let x = this.vectorNormalize([crossZ[0], crossZ[1], crossZ[2]]);
-		let y = this.vectorCross([z[0], z[1], z[2]], [x[0], x[1], x[2]]);
+		let z = Vector.normalize3([eye[0] - at[0], eye[1] - at[1], eye[2] - at[2]]);
+		let crossZ = Vector.cross([up[0], up[1], up[2]], [z[0], z[1], z[2]]);
+		let x = Vector.normalize3([crossZ[0], crossZ[1], crossZ[2]]);
+		let y = Vector.cross([z[0], z[1], z[2]], [x[0], x[1], x[2]]);
 
-		let xDotEye = -this.vectorDot([x[0], x[1], x[2]], [eye[0], eye[1], eye[2]]);
-		let yDotEye = -this.vectorDot([y[0], y[1], y[2]], [eye[0], eye[1], eye[2]]);
-		let zDotEye = -this.vectorDot([z[0], z[1], z[2]], [eye[0], eye[1], eye[2]]);
+		let xDotEye = -Vector.dot3([x[0], x[1], x[2]], [eye[0], eye[1], eye[2]]);
+		let yDotEye = -Vector.dot3([y[0], y[1], y[2]], [eye[0], eye[1], eye[2]]);
+		let zDotEye = -Vector.dot3([z[0], z[1], z[2]], [eye[0], eye[1], eye[2]]);
 
 		return [
 			x[0], x[1], x[2], 0,
