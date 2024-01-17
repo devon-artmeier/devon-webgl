@@ -60,11 +60,9 @@ const fboVertices = [
 	new FBOVertex([0, 0], [0, 1]),
 	new FBOVertex([1, 1], [1, 0]),
 	new FBOVertex([1, 0], [1, 1]),
+	new FBOVertex([1, 1], [1, 0]),
+	new FBOVertex([0, 0], [0, 1]),
 	new FBOVertex([0, 1], [0, 0])
-];
-
-const fboElements = [
-	0,  1,  2,  1,  0,  3
 ];
 
 export class Context extends Resource
@@ -74,9 +72,9 @@ export class Context extends Resource
 	private static _savedScroll: Vector2<number>;
 	
 	public readonly gl: WebGL2RenderingContext;
-	public readonly textures = new ResourceManager();
-	public readonly shaders = new ResourceManager();
-	public readonly meshes = new ResourceManager();
+	public readonly textures: ResourceManager = new ResourceManager();
+	public readonly shaders: ResourceManager = new ResourceManager();
+	public readonly meshes: ResourceManager = new ResourceManager();
 
 	private _currentTexture: WebGLTexture;
 	private _currentShader: WebGLProgram;
@@ -100,7 +98,7 @@ export class Context extends Resource
 	/**************************/
 	
 	// Constructor
-	constructor(public readonly element: HTMLElement, id: string, size: Vector2<number>)
+	private constructor(public readonly element: HTMLElement, id: string, size: Vector2<number>)
 	{
 		super(null, id);
 		
@@ -133,7 +131,7 @@ export class Context extends Resource
 			
 			Texture.create("fbo_devon_webgl", size);
 			Shader.create("shader_devon_webgl", fboVertexShader, fboFragShader);
-			Mesh.createStatic("mesh_devon_webgl", fboVertices, fboElements);
+			Mesh.createStatic("mesh_devon_webgl", fboVertices);
 			
 			ContextPool.bind = oldContext;
 			
@@ -160,14 +158,14 @@ export class Context extends Resource
 		this._canvas.height = Math.round(rect.height * dpr);
 		
 		if (!Context._fullscreen) {
-			this._canvas.style.left  = `${window.scrollX + rect.left}px`;
-			this._canvas.style.top  = `${window.scrollY + rect.top}px`;
+			this._canvas.style.left = `${window.scrollX + rect.left}px`;
+			this._canvas.style.top = `${window.scrollY + rect.top}px`;
 		} else {
-			this._canvas.style.left  = `${rect.left}px`;
-			this._canvas.style.top  = `${rect.top}px`;
+			this._canvas.style.left = `${rect.left}px`;
+			this._canvas.style.top = `${rect.top}px`;
 		}
-		this._canvas.style.width  = `${this._canvas.width / dpr}px`;
-		this._canvas.style.height  = `${this._canvas.height / dpr}px`;
+		this._canvas.style.width = `${this._canvas.width / dpr}px`;
+		this._canvas.style.height = `${this._canvas.height / dpr}px`;
 		
 		let fboSize = Texture.getSize("fbo_devon_webgl");
 		if (fboSize[0] != this._canvas.width || fboSize[1] != this._canvas.height) {
@@ -339,6 +337,11 @@ export class Context extends Resource
 	// Delete
 	public delete()
 	{
+		if (this._container != null) {
+			this._container.innerHTML = "";
+			this._container.remove();
+		}
+
 		this.textures.clear();
 		this.shaders.clear();
 		this.meshes.clear();

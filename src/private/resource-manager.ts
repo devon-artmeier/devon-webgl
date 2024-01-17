@@ -3,7 +3,7 @@ import { Resource } from "./resource";
 // Resource manager class
 export class ResourceManager
 {
-	private _pool = new Map<string, Resource>();
+	private _pool: Map<string, Resource> = new Map<string, Resource>();
 	
 	// Add resource to pool
 	public add(resourceID: string, resource: Resource)

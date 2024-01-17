@@ -12,7 +12,7 @@ export class Shader extends Resource
 	/**************************/
 	
 	// Constructor
-	constructor(context: Context, id: string, vertexCode: string, fragCode: string)
+	private constructor(context: Context, id: string, vertexCode: string, fragCode: string)
 	{
 		super(context, id);
 		let gl = this._context.gl;

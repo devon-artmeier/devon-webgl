@@ -3,20 +3,20 @@ import { ContextPool } from "../private/context-pool";
 export class Blend
 {
 	// Functions
-	public static readonly Zero = 0;
-	public static readonly One = 1;
-	public static readonly SrcColor = 2;
-	public static readonly OneMinusSrcColor = 3;
-	public static readonly DestColor = 4;
-	public static readonly OneMinusDestColor = 5;
-	public static readonly SrcAlpha = 6;
-	public static readonly OneMinusSrcAlpha = 7;
-	public static readonly DestAlpha = 8;
-	public static readonly OneMinusDestAlpha = 9;
-	public static readonly ConstantColor = 10;
-	public static readonly OneMinusConstantColor = 11;
-	public static readonly ConstantAlpha = 12;
-	public static readonly OneMinusConstantAlpha = 13;
+	public static readonly Zero: number = 0;
+	public static readonly One: number = 1;
+	public static readonly SrcColor: number = 2;
+	public static readonly OneMinusSrcColor: number = 3;
+	public static readonly DestColor: number = 4;
+	public static readonly OneMinusDestColor: number = 5;
+	public static readonly SrcAlpha: number = 6;
+	public static readonly OneMinusSrcAlpha: number = 7;
+	public static readonly DestAlpha: number = 8;
+	public static readonly OneMinusDestAlpha: number = 9;
+	public static readonly ConstantColor: number = 10;
+	public static readonly OneMinusConstantColor: number = 11;
+	public static readonly ConstantAlpha: number = 12;
+	public static readonly OneMinusConstantAlpha: number = 13;
 
 	// Enable blending
 	public static enable()
@@ -44,13 +44,18 @@ export class Blend
 		let context = ContextPool.bind;
 		if (context != null) {
 			let gl = context.gl;
-			return [
+			let funcs = [
 				gl.ZERO, gl.ONE, gl.SRC_COLOR, gl.ONE_MINUS_SRC_COLOR,
 				gl.DST_COLOR, gl.ONE_MINUS_DST_COLOR, gl.SRC_ALPHA,
 				gl.ONE_MINUS_SRC_ALPHA, gl.DST_ALPHA, gl.ONE_MINUS_DST_ALPHA,
 				gl.CONSTANT_COLOR, gl.ONE_MINUS_CONSTANT_COLOR,
 				gl.CONSTANT_ALPHA, gl.ONE_MINUS_CONSTANT_ALPHA
-			][func];
+			];
+
+			if (func >= 0 && func < funcs.length) {
+				return funcs[func];
+			}
+			return gl.ZERO;
 		}
 		return 0;
 	}

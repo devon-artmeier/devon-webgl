@@ -3,7 +3,7 @@ import { Context } from "../public/context";
 
 export class ContextPool
 {
-	public static readonly contexts = new ResourceManager();
+	public static readonly contexts: ResourceManager = new ResourceManager();
 	public static bind: Context = null;
 
 	// Get context

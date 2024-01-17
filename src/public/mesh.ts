@@ -28,7 +28,7 @@ export class Mesh<T extends Vertex> extends Resource
 	/**************************/
 
 	// Constructor
-	constructor(context: Context, id: string, private _dynamic: boolean)
+	private constructor(context: Context, id: string, private _dynamic: boolean)
 	{
 		super(context, id);
 		let gl = this._context.gl;
