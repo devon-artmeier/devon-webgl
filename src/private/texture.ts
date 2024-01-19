@@ -178,20 +178,14 @@ export class Texture
 	/**
 	 * Bind render texture's framebuffer for rendering onto (dummied out).
 	 */
-	public bindFBO()
-	{
-		console.log(`Warning: Cannot bind regular texture "${this.id}" as if it's a render texture.`);
-	}
+	public bindFBO() { }
 	
 	/**
 	 * Resize render texture (dummied out).
 	 * 
 	 * @param size The new size of the render texture.
 	 */
-	public resize(size: [number, number])
-	{
-		console.log(`Warning: Cannot resize regular texture "${this.id}" as if it's a render texture.`);
-	}
+	public resize(size: [number, number]) { }
 
 	/**
 	 * Generate blank texture.

@@ -70,44 +70,6 @@ export class RenderTexture extends Texture
 	}
 
 	/**
-	 * Generate blank texture (dummied out).
-	 * 
-	 * @param size Size of texture to generate.
-	 */
-	public override generateBlank(size: [number, number])
-	{
-		console.log(`Warning: Cannot create blank texture for render texture "${this.id}".`);
-	}
-
-	/**
-	 * Load image file (dummied out).
-	 * 
-	 * @param path Path to image file.
-	 */
-	public override loadImageFile(path: string)
-	{
-		console.log(`Warning: Cannot load image file into render texture "${this.id}".`);
-	}
-
-	/**
-	 * Load image (dummied out).
-	 * 
-	 * @param image Image to load.
-	 */
-	public override loadImage(image: HTMLImageElement)
-	{
-		console.log(`Warning: Cannot load image into render texture "${this.id}".`);
-	}
-
-	/**
-	 * Load video frame (dummied out).
-	 */
-	public override loadVideoFrame(video: HTMLVideoElement)
-	{
-		console.log(`Warning: Cannot load video frame into render texture "${this.id}".`);
-	}
-
-	/**
 	 * Delete render texture.
 	 */
 	public delete()

@@ -36,7 +36,7 @@ export class Mesh<T extends Vertex>
 	 * @returns Vertex data.
 	 */
 	get vertices(): Array<T> {
-		if (!this._dynamic) return this._vertices.map(x => Object.assign({}, x));
+		if (!this.dynamic) return this._vertices.map(x => Object.assign({}, x));
 		return this._vertices;
 	}
 
@@ -46,7 +46,7 @@ export class Mesh<T extends Vertex>
 	 * @returns element data.
 	 */
 	get elements(): number[] {
-		if (!this._dynamic) return this._elements.map(x => Object.assign({}, x));
+		if (!this.dynamic) return this._elements.map(x => Object.assign({}, x));
 		return this._elements;
 	}
 
@@ -55,10 +55,10 @@ export class Mesh<T extends Vertex>
 	 * 
 	 * @param id The ID of the shader.
 	 * @param _context The WebGL context.
-	 * @param _dynamic: Dynamic mesh flag.
+	 * @param dynamic: Dynamic mesh flag.
 	 */
 	constructor(public readonly id: string, protected readonly _context: Context,
-		private _dynamic: boolean)
+		public readonly dynamic: boolean)
 	{
 		if (this._context != null) {
 			this._context.meshes.get(this.id)?.delete();
@@ -77,11 +77,11 @@ export class Mesh<T extends Vertex>
 			let gl = this._context.gl;
 
 			this._glVertexBuffer = gl.createBuffer();
-			this._context.bindGLVertexArray(this._glVertexBuffer);
+			this._context.bindGLVertexArray(this._glVertexArray);
 
 			this._context.bindGLVertexBuffer(this._glVertexBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, this.getRawVertexData(),
-				this._dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
+				this.dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
 
 			let offset = 0;
 			let vertex = this._vertices[0];
@@ -110,11 +110,11 @@ export class Mesh<T extends Vertex>
 			let gl = this._context.gl;
 
 			this._glElementBuffer = gl.createBuffer();
-			this._context.bindGLVertexArray(this._glVertexBuffer);
+			this._context.bindGLVertexArray(this._glVertexArray);
 
 			this._context.bindGLElementBuffer(this._glElementBuffer);
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.getRawElementData(),
-				this._dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);	
+				this.dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);	
 
 			this._context.bindGLVertexArray(null);
 			this._context.bindGLElementBuffer(null);
@@ -159,48 +159,46 @@ export class Mesh<T extends Vertex>
 	 * @param offset Offset in destination data array.
 	 * @param init Initialize flag.
 	 */
-	private setData(srcData: any, destData: any, offset: number, init: boolean)
+	private setData(srcData: any, destData: any, offset: number)
 	{
-		if (init || this._dynamic) {
-			if (offset < 0) offset = 0;
+		if (offset < 0) offset = 0;
 
-			let overwriteLen = srcData.length - Math.max(0,
-				(offset + srcData.length) - destData.length);
+		let overwriteLen = srcData.length - Math.max(0,
+			(offset + srcData.length) - destData.length);
 
-			let i = 0;
-			while (i < overwriteLen) {
-				destData[i + offset] = srcData[i];
-				i++;
-			}
+		let i = 0;
+		while (i < overwriteLen) {
+			destData[i + offset] = srcData[i];
+			i++;
+		}
 
-			for (let j = 0; j < srcData.length - overwriteLen; j++) {
-				destData.push(srcData[i++]);
-			}
+		for (let j = 0; j < srcData.length - overwriteLen; j++) {
+			destData.push(srcData[i++]);
 		}
 	}
 
 	/**
-	 * Set array of vertices.
+	 * Set vertex data.
 	 * 
 	 * @param vertices Vertex data.
 	 * @param offset Desination data offset.
 	 * @param init Initialize flag.
 	 */
-	public setVertexArray(vertices: T[], offset: number, init: boolean)
+	public setVertices(vertices: T[], offset: number)
 	{
-		this.setData(vertices, this._vertices, offset, init);
+		this.setData(vertices, this._vertices, offset);
 	}
 
 	/**
-	 * Set array of elements.
+	 * Set element data.
 	 * 
 	 * @param elements Element data.
 	 * @param offset Desination data offset.
 	 * @param init Initialize flag.
 	 */
-	public setElementArray(elements: number[], offset: number, init: boolean)
+	public setElements(elements: number[], offset: number)
 	{
-		this.setData(elements, this._elements, offset, init);
+		this.setData(elements, this._elements, offset);
 	}
 
 	/**
@@ -210,9 +208,7 @@ export class Mesh<T extends Vertex>
 	 */
 	public resetVertices(count: number)
 	{
-		if (this._dynamic) {
-			this._vertices = new Array<T>(count);
-		}
+		this._vertices = new Array<T>(count);
 	}
 
 	/**
@@ -222,9 +218,7 @@ export class Mesh<T extends Vertex>
 	 */
 	public resetElements(count: number)
 	{
-		if (this._dynamic) {
-			this._elements = new Array<number>(count);
-		}
+		this._elements = new Array<number>(count);
 	}
 
 	/**
@@ -232,7 +226,7 @@ export class Mesh<T extends Vertex>
 	 */
 	public flushVertices()
 	{
-		if (this._dynamic && this._glVertexBuffer != null) {
+		if (this._glVertexBuffer != null) {
 			let gl = this._context.gl;
 				
 			if (this._elements.length > 0) {
@@ -262,7 +256,7 @@ export class Mesh<T extends Vertex>
 	 */
 	public flushElements()
 	{
-		if (this._dynamic && this._glElementBuffer != null) {
+		if (this._glElementBuffer != null) {
 			let gl = this._context.gl;
 
 			if (this._elements.length > 0) {

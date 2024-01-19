@@ -1,24 +1,154 @@
 import { Context } from "../private/context";
-import { BlendFunc, CullFace, FrontFace, DepthFunc, StencilFunc, StencilOption, TextureFilter, TextureWrap } from "./enum";
+import { BlendFunc, CullFace, FrontFace, DepthFunc,
+	StencilFunc, StencilOption, TextureFilter, TextureWrap } from "./enum";
+import { Log } from "../private/log";
+import { Matrix } from "./matrix";
 import { Mesh } from "../private/mesh";
 import { RenderTexture } from "../private/render-texture";
 import { Shader } from "../private/shader";
 import { Texture } from "../private/texture"
+import { Vector2, Vector3, Vector4, Matrix2, Matrix3, Matrix4 } from "./tuples";
 import { Vertex } from "./vertex";
+
+/**
+ * Framebuffer vertex shader
+ */
+const fboVertexShader =
+`#version 300 es
+
+layout (location = 0) in vec2 vecFragCoord;
+layout (location = 1) in vec2 vecTexCoord;
+
+out vec2 texCoord;
+
+uniform mat4 projection;
+
+void main(void)
+{
+	texCoord = vecTexCoord;
+	gl_Position = projection * vec4(vecFragCoord, 0, 1);
+}
+`;
+
+/**
+ * Framebuffer fragment shader
+ */
+const fboFragShader = 
+`#version 300 es
+precision highp float;
+
+in vec2 texCoord;
+out vec4 fragColor;
+uniform sampler2D renderTexture;
+
+void main(void)
+{
+	fragColor = texture(renderTexture, texCoord);
+}
+`;
+
+/**
+ * Framebuffer vertex
+ */
+class FBOVertex extends Vertex
+{
+	// Constructor
+	constructor(public coord: Vector2<number>, public tex: Vector2<number>)
+		{ super(); }
+
+	// Get data
+	public getData(): readonly number[][]
+	{
+		return [this.coord, this.tex];
+	}
+}
+
+/**
+ * Framebuffer vertex data
+ */
+const fboVertices = [
+	new FBOVertex([0, 0], [0, 1]),
+	new FBOVertex([1, 1], [1, 0]),
+	new FBOVertex([1, 0], [1, 1]),
+	new FBOVertex([1, 1], [1, 0]),
+	new FBOVertex([0, 0], [0, 1]),
+	new FBOVertex([0, 1], [0, 0])
+];
 
 /**
  * A class that represents a WebGL canvas.
  */
 export class Canvas
 {
+	/** Fullscreen flag. */
+	private static _fullscreen: boolean = false;
+
+	/** Fullscreen initialized flag. */
+	private static _fullscreenInit: boolean = false;
+
+	/** Saved scroll position for exiting fullscreen with. */
+	private static _savedScroll: Vector2<number>;
+
 	/** The WebGL context. */
 	private _context: Context;
 
 	/** The container HTML element. */
-	private _container: HTMLDivElement;
+	public readonly container: HTMLDivElement;
 
 	/** The canvas HTML element. */
-	private _canvas: HTMLCanvasElement;
+	public readonly canvas: HTMLCanvasElement;
+
+	/** Deleted flag. */
+	private _deleted: boolean = false;
+
+	/**
+	 * Get canvas width.
+	 */
+	get width(): number
+	{
+		return this.getTextureSize("fbo_devon_webgl")[0];
+	}
+
+	/**
+	 * Resize canvas width.
+	 */
+	set width(value: number)
+	{
+		this.container.style.width = `${value}px`;
+	}
+
+	/**
+	 * Get canvas height.
+	 */
+	get height(): number
+	{
+		return this.getTextureSize("fbo_devon_webgl")[1];
+	}
+
+	/**
+	 * Resize canvas height.
+	 */
+	set height(value: number)
+	{
+		this.container.style.height = `${value}px`;
+	}
+
+	/**
+	 * Get canvas size.
+	 */
+	get size(): Vector2<number>
+	{
+		return this.getTextureSize("fbo_devon_webgl");
+	}
+
+	/**
+	 * Resize canvas.
+	 */
+	set size(value: Vector2<number>)
+	{
+		this.width = value[0];
+		this.height = value[1];
+	}
 
 	/**
 	 * The constructor of the `Canvas` class.
@@ -26,23 +156,144 @@ export class Canvas
 	 * @param id The ID of the canvas.
 	 * @param size: The size of the canvas.
 	 */
-	constructor(public readonly id: string, size: [number, number])
+	constructor(public readonly id: string, size: Vector2<number>)
 	{
-		this._container = document.createElement("div");
-		this._container.id = id;
-		this._container.className = "devon-webgl-container";
-		this._container.style.width = `${size[0]}px`;
-		this._container.style.height = `${size[1]}px`;
-		this._container.style.display = `block`;
-		this._container.style.zIndex = `-1`;
+		this.container = document.createElement("div");
+		this.container.id = id;
+		this.container.className = "devon-webgl-container";
+		this.container.style.width = `${size[0]}px`;
+		this.container.style.height = `${size[1]}px`;
+		this.container.style.display = `block`;
+		this.container.style.zIndex = `-1`;
 			
-		this._canvas = document.createElement("canvas");
-		this._canvas.className = "devon-webgl-canvas";
-		this._canvas.style.position = "absolute";
-		this._container.appendChild(this._canvas);
+		this.canvas = document.createElement("canvas");
+		this.canvas.className = "devon-webgl-canvas";
+		this.canvas.style.position = "absolute";
+		this.container.appendChild(this.canvas);
 
-		this._context = new Context(this._canvas.getContext("webgl2",
+		this._context = new Context(this.canvas.getContext("webgl2",
 			{ alpha: true, stencil: true, preserveDrawingBuffer: true }));
+
+		let dpr = window.devicePixelRatio;
+		size = [Math.round(size[0] * dpr), Math.round(size[1] * dpr)];
+
+		this.createRenderTexture("fbo_devon_webgl", size);
+		this.createShader("shader_devon_webgl", fboVertexShader, fboFragShader);
+		this.createStaticMesh("mesh_devon_webgl", fboVertices);
+
+		if (!Canvas._fullscreenInit) {
+			document.addEventListener("fullscreenchange", function ()
+			{
+				Canvas._fullscreen = !Canvas._fullscreen;
+				if (!Canvas._fullscreen) {
+					window.scrollTo(Canvas._savedScroll[0], Canvas._savedScroll[1]);
+				}
+			});
+			Canvas._fullscreenInit = true;
+		}
+	}
+
+	/**
+	 * Clear canvas.
+	 * 
+	 * @param color Clear color.
+	 */
+	public clear(color: Vector4<number>)
+	{
+		if (!this._deleted) {
+			let gl = this._context.gl;
+			gl.clearColor(... color);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+		}
+	}
+
+	/**
+	 * Start canvas drawing.
+	 */
+	public startDraw()
+	{
+		if (!this._deleted) {
+			const rect = this.container.getBoundingClientRect();
+			
+			let dpr = window.devicePixelRatio;
+			this.canvas.width = Math.round(rect.width * dpr);
+			this.canvas.height = Math.round(rect.height * dpr);
+
+			if (!Canvas._fullscreen) {
+				this.canvas.style.left = `${window.scrollX + rect.left}px`;
+				this.canvas.style.top = `${window.scrollY + rect.top}px`;
+			} else {
+				this.canvas.style.left = `${rect.left}px`;
+				this.canvas.style.top = `${rect.top}px`;
+			}
+			
+			this.canvas.style.width = `${this.canvas.width / dpr}px`;
+			this.canvas.style.height = `${this.canvas.height / dpr}px`;
+
+			let fboSize = this.getTextureSize("fbo_devon_webgl");
+			if (fboSize[0] != this.canvas.width || fboSize[1] != this.canvas.height) {
+				fboSize = [this.canvas.width, this.canvas.height];
+				this.resizeRenderTexture("fbo_devon_webgl", [this.canvas.width, this.canvas.height]);
+			}
+
+			this.bindRenderTexture("fbo_devon_webgl");
+		}
+	}
+
+	/**
+	 * Finish canvas drawing.
+	 */
+	public finishDraw()
+	{
+		if (!this._deleted) {
+			this._context.bindGLFramebuffer(null);
+
+			this.setViewport([0, 0], [this.canvas.width, this.canvas.height]);
+			this.disableDepth();
+			this.disableStencil();
+			this.setStencilMask(0xFF);
+			this.setStencilFunction(StencilFunc.Always, 1, 0xFF);
+			this.disableCull();
+
+			let projection = Matrix.ortho([0, 0], [1, 1], [0, 1]);
+			
+			this.setShaderTexture("shader_devon_webgl", "renderTexture", "fbo_devon_webgl", 0);
+			this.setShaderMatrix4("shader_devon_webgl", "projection", projection);
+
+			this.drawMesh("mesh_devon_webgl", "shader_devon_webgl");
+		}
+	}
+
+	/**
+	 * Set canvas to fullscreen.
+	 */
+	public setFullscreen()
+	{
+		if (!this._deleted) {
+			this.container.requestFullscreen();
+			Canvas._savedScroll = [window.scrollX, window.scrollY];
+		}
+	}
+
+	/**
+	 * Log deleted message.
+	 * 
+	 * @param funcName The name of the function that called this.
+	 */
+	private deletedMessage(funcName)
+	{
+		Log.error(`${funcName}: "${this.id}" has been deleted.`);
+	}
+
+	/**
+	 * Delete canvas.
+	 */
+	public delete()
+	{
+		if (!this._deleted) {
+			this._context.delete();
+			this._deleted = true;
+		}
 	}
 
 	/************/
@@ -55,9 +306,13 @@ export class Canvas
 	 * @param pos Position of viewport.
 	 * @param res Resolution of viewport.
 	 */
-	public setViewport(pos: [number, number], res: [number, number])
+	public setViewport(pos: Vector2<number>, res: Vector2<number>)
 	{
-		this._context.gl.viewport(... pos, ... res);
+		if (!this._deleted) {
+			this._context.gl.viewport(... pos, ... res);
+		} else {
+			this.deletedMessage("setViewport");
+		}
 	}
 
 	/**
@@ -65,10 +320,15 @@ export class Canvas
 	 * 
 	 * @returns Viewport of canvas.
 	 */
-	public getViewport(): [[number, number], [number, number]]
+	public getViewport(): [Vector2<number>, Vector2<number>]
 	{
-		let viewport = this._context.gl.getParameter(this._context.gl.VIEWPORT)
-		return [[viewport[0], viewport[1]], [viewport[2], viewport[3]]];
+		if (!this._deleted) {
+			let viewport = this._context.gl.getParameter(this._context.gl.VIEWPORT)
+			return [[viewport[0], viewport[1]], [viewport[2], viewport[3]]];
+		} else {
+			this.deletedMessage("getViewport");
+		}
+		return [[0, 0], [0, 0]];
 	}
 
 	/************/
@@ -80,7 +340,11 @@ export class Canvas
 	 */
 	public enableBlend()
 	{
-		this._context.gl.enable(this._context.gl.BLEND);
+		if (!this._deleted) {
+			this._context.gl.enable(this._context.gl.BLEND);
+		} else {
+			this.deletedMessage("enableBlend");
+		}
 	}
 
 	/**
@@ -88,7 +352,11 @@ export class Canvas
 	 */
 	public disableBlend()
 	{
-		this._context.gl.disable(this._context.gl.BLEND);
+		if (!this._deleted) {
+			this._context.gl.disable(this._context.gl.BLEND);
+		} else {
+			this.deletedMessage("disableBlend");
+		}
 	}
 
 	/**
@@ -117,7 +385,11 @@ export class Canvas
 	 */
 	public setBlendFunction(srcFunc: number, dstFunc: number)
 	{
-		this._context.gl.blendFunc(this.getGLBlendFunc(srcFunc), this.getGLBlendFunc(dstFunc));
+		if (!this._deleted) {
+			this._context.gl.blendFunc(this.getGLBlendFunc(srcFunc), this.getGLBlendFunc(dstFunc));
+		} else {
+			this.deletedMessage("setBlendFunction");
+		}
 	}
 	
 	/**
@@ -130,8 +402,12 @@ export class Canvas
 	 */
 	public setBlendFuncSeparate(srcRGB: number, dstRGB: number, srcAlpha: number, dstAlpha: number)
 	{
-		this._context.gl.blendFuncSeparate(this.getGLBlendFunc(srcRGB), this.getGLBlendFunc(dstRGB),
-			this.getGLBlendFunc(srcAlpha), this.getGLBlendFunc(dstAlpha));
+		if (!this._deleted) {
+			this._context.gl.blendFuncSeparate(this.getGLBlendFunc(srcRGB), this.getGLBlendFunc(dstRGB),
+				this.getGLBlendFunc(srcAlpha), this.getGLBlendFunc(dstAlpha));
+		} else {
+			this.deletedMessage("setBlendFuncSeparate");
+		}
 	}
 
 	/***********/
@@ -143,7 +419,11 @@ export class Canvas
 	 */
 	public enableCull()
 	{
-		this._context.gl.enable(this._context.gl.CULL_FACE);
+		if (!this._deleted) {
+			this._context.gl.enable(this._context.gl.CULL_FACE);
+		} else {
+			this.deletedMessage("enableCull");
+		}
 	}
 
 	/**
@@ -151,7 +431,11 @@ export class Canvas
 	 */
 	public disableCull()
 	{
-		this._context.gl.disable(this._context.gl.CULL_FACE);
+		if (!this._deleted) {
+			this._context.gl.disable(this._context.gl.CULL_FACE);
+		} else {
+			this.deletedMessage("disableCull");
+		}
 	}
 
 	/**
@@ -161,8 +445,12 @@ export class Canvas
 	 */
 	public setCullFace(face: CullFace)
 	{
-		let gl = this._context.gl;
-		gl.cullFace([gl.FRONT, gl.BACK, gl.FRONT_AND_BACK][face]);
+		if (!this._deleted) {
+			let gl = this._context.gl;
+			gl.cullFace([gl.FRONT, gl.BACK, gl.FRONT_AND_BACK][face]);
+		} else {
+			this.deletedMessage("setCullFace");
+		}
 	}
 
 	/**
@@ -172,8 +460,12 @@ export class Canvas
 	 */
 	public setFrontFace(face: FrontFace)
 	{
-		let gl = this._context.gl;
-		gl.frontFace([gl.CW, gl.CCW][face]);
+		if (!this._deleted) {
+			let gl = this._context.gl;
+			gl.frontFace([gl.CW, gl.CCW][face]);
+		} else {
+			this.deletedMessage("setFrontFace");
+		}
 	}
 
 	/*****************/
@@ -185,7 +477,11 @@ export class Canvas
 	 */
 	public enableDepth()
 	{
-		this._context.gl.enable(this._context.gl.DEPTH_TEST);
+		if (!this._deleted) {
+			this._context.gl.enable(this._context.gl.DEPTH_TEST);
+		} else {
+			this.deletedMessage("enableDepth");
+		}
 	}
 
 	/**
@@ -193,7 +489,11 @@ export class Canvas
 	 */
 	public disableDepth()
 	{
-		this._context.gl.disable(this._context.gl.DEPTH_TEST);
+		if (!this._deleted) {
+			this._context.gl.disable(this._context.gl.DEPTH_TEST);
+		} else {
+			this.deletedMessage("disableDepth");
+		}
 	}
 
 	/**
@@ -201,7 +501,11 @@ export class Canvas
 	 */
 	public clearDepthBuffer()
 	{
-		this._context.gl.clear(this._context.gl.DEPTH_BUFFER_BIT);
+		if (!this._deleted) {
+			this._context.gl.clear(this._context.gl.DEPTH_BUFFER_BIT);
+		} else {
+			this.deletedMessage("clearDepthBuffer");
+		}
 	}
 
 	/**
@@ -211,11 +515,15 @@ export class Canvas
 	 */
 	public setDepthFunction(func: DepthFunc)
 	{
-		let gl = this._context.gl;
-		gl.depthFunc([
-			gl.ALWAYS, gl.NEVER, gl.EQUAL, gl.NOTEQUAL,
-			gl.LESS, gl.LEQUAL, gl.GREATER, gl.GEQUAL
-		][func]);
+		if (!this._deleted) {
+			let gl = this._context.gl;
+			gl.depthFunc([
+				gl.ALWAYS, gl.NEVER, gl.EQUAL, gl.NOTEQUAL,
+				gl.LESS, gl.LEQUAL, gl.GREATER, gl.GEQUAL
+			][func]);
+		} else {
+			this.deletedMessage("setDepthFunction");
+		}
 	}
 
 	/**
@@ -223,7 +531,11 @@ export class Canvas
 	 */
 	public enableDepthMask()
 	{
-		this._context.gl.depthMask(true);
+		if (!this._deleted) {
+			this._context.gl.depthMask(true);
+		} else {
+			this.deletedMessage("enableDepthMask");
+		}
 	}
 
 	/**
@@ -231,7 +543,11 @@ export class Canvas
 	 */
 	public disableDepthMask()
 	{
-		this._context.gl.depthMask(false);
+		if (!this._deleted) {
+			this._context.gl.depthMask(false);
+		} else {
+			this.deletedMessage("disableDepthMask");
+		}
 	}
 
 	/*******************/
@@ -243,7 +559,11 @@ export class Canvas
 	 */
 	public enableScissor()
 	{
-		this._context.gl.enable(this._context.gl.SCISSOR_TEST);
+		if (!this._deleted) {
+			this._context.gl.enable(this._context.gl.SCISSOR_TEST);
+		} else {
+			this.deletedMessage("enableScissor");
+		}
 	}
 
 	/**
@@ -251,7 +571,11 @@ export class Canvas
 	 */
 	public disableScissor()
 	{
-		this._context.gl.disable(this._context.gl.SCISSOR_TEST);
+		if (!this._deleted) {
+			this._context.gl.disable(this._context.gl.SCISSOR_TEST);
+		} else {
+			this.deletedMessage("disableScissor");
+		}
 	}
 
 	/**
@@ -260,10 +584,14 @@ export class Canvas
 	 * @param pos Position of region.
 	 * @param res Resolution of region.
 	 */
-	public setScissorRegion(pos: [number, number], res: [number, number])
+	public setScissorRegion(pos: Vector2<number>, res: Vector2<number>)
 	{
-		let viewport = this.getViewport();
-		this._context.gl.scissor(pos[0], viewport[1][1] - pos[1] - pos[0], ... res);
+		if (!this._deleted) {
+			let viewport = this.getViewport();
+			this._context.gl.scissor(pos[0], viewport[1][1] - pos[1] - pos[0], ... res);
+		} else {
+			this.deletedMessage("setScissorRegion");
+		}
 	}
 
 	/*******************/
@@ -275,7 +603,11 @@ export class Canvas
 	 */
 	public enableStencil()
 	{
-		this._context.gl.enable(this._context.gl.STENCIL_TEST);
+		if (!this._deleted) {
+			this._context.gl.enable(this._context.gl.STENCIL_TEST);
+		} else {
+			this.deletedMessage("enableStencil");
+		}
 	}
 
 	/**
@@ -283,7 +615,11 @@ export class Canvas
 	 */
 	public disableStencil()
 	{
-		this._context.gl.disable(this._context.gl.STENCIL_TEST);
+		if (!this._deleted) {
+			this._context.gl.disable(this._context.gl.STENCIL_TEST);
+		} else {
+			this.deletedMessage("disableStencil");
+		}
 	}
 
 	/**
@@ -291,7 +627,11 @@ export class Canvas
 	 */
 	public clearStencilBuffer()
 	{
-		this._context.gl.clear(this._context.gl.DEPTH_BUFFER_BIT);
+		if (!this._deleted) {
+			this._context.gl.clear(this._context.gl.DEPTH_BUFFER_BIT);
+		} else {
+			this.deletedMessage("clearStencilBuffer");
+		}
 	}
 
 	/**
@@ -303,11 +643,15 @@ export class Canvas
 	 */
 	public setStencilFunction(func: StencilFunc, ref: number, mask: number)
 	{
-		let gl = this._context.gl;
-		gl.stencilFunc([
-			gl.ALWAYS, gl.NEVER, gl.EQUAL, gl.NOTEQUAL,
-			gl.LESS, gl.LEQUAL, gl.GREATER, gl.GEQUAL
-		][func], ref, mask);
+		if (!this._deleted) {
+			let gl = this._context.gl;
+			gl.stencilFunc([
+				gl.ALWAYS, gl.NEVER, gl.EQUAL, gl.NOTEQUAL,
+				gl.LESS, gl.LEQUAL, gl.GREATER, gl.GEQUAL
+			][func], ref, mask);
+		} else {
+			this.deletedMessage("setStencilFunction");
+		}
 	}
 
 	/**
@@ -319,12 +663,16 @@ export class Canvas
 	 */
 	public setStencilOptions(fail: StencilOption, zfail: StencilOption, zpass: StencilOption)
 	{
-		let gl = this._context.gl;
-		let ops = [
-			gl.KEEP, gl.ZERO, gl.REPLACE, gl.INCR,
-			gl.INCR_WRAP, gl.DECR, gl.DECR_WRAP, gl.INVERT
-		];
-		gl.stencilOp(ops[fail], ops[zfail], ops[zpass]);
+		if (!this._deleted) {
+			let gl = this._context.gl;
+			let ops = [
+				gl.KEEP, gl.ZERO, gl.REPLACE, gl.INCR,
+				gl.INCR_WRAP, gl.DECR, gl.DECR_WRAP, gl.INVERT
+			];
+			gl.stencilOp(ops[fail], ops[zfail], ops[zpass]);
+		} else {
+			this.deletedMessage("setStencilOptions");
+		}
 	}
 
 	/**
@@ -334,7 +682,11 @@ export class Canvas
 	 */
 	public setStencilMask(mask: number)
 	{
-		this._context.gl.stencilMask(mask);
+		if (!this._deleted) {
+			this._context.gl.stencilMask(mask);
+		} else {
+			this.deletedMessage("setStencilMask");
+		}
 	}
 
 	/***********/
@@ -347,9 +699,29 @@ export class Canvas
 	 * @param id Texture ID.
 	 * @param size Texture size.
 	 */
-	public createTexture(id: string, size: [number, number] = [1, 1])
+	public createTexture(id: string, size: Vector2<number> = [1, 1])
 	{
-		new Texture(id, this._context, size);
+		if (!this._deleted) {
+			new Texture(id, this._context, size);
+		} else {
+			this.deletedMessage("createTexture");
+		}
+	}
+
+	/**
+	 * Get texture
+	 * 
+	 * @param id Texture ID.
+	 * @param funcName The name of the function that called this.
+	 * @returns The texture.
+	 */
+	private getTexture(id: string, funcName: string): Texture
+	{
+		let texture = this._context.textures.get(id);
+		if (texture == null) {
+			Log.error(`${funcName}: Cannot find "${id}".`);
+		}
+		return texture;
 	}
 
 	/**
@@ -360,7 +732,15 @@ export class Canvas
 	 */
 	public getTextureWidth(id: string): number
 	{
-		return this._context.textures.get(id)?.width;
+		if (!this._deleted) {
+			let width =  this.getTexture(id, "getTextureWidth")?.width;
+			if (width != null) {
+				return width;
+			}
+		} else {
+			this.deletedMessage("getTextureWidth");
+		}
+		return 0;
 	}
 
 	/**
@@ -371,7 +751,15 @@ export class Canvas
 	 */
 	public getTextureHeight(id: string): number
 	{
-		return this._context.textures.get(id)?.height;
+		if (!this._deleted) {
+			let height =  this.getTexture(id, "getTextureHeight")?.height;
+			if (height != null) {
+				return height;
+			}
+		} else {
+			this.deletedMessage("getTextureHeight");
+		}
+		return 0;
 	}
 
 	/**
@@ -380,9 +768,17 @@ export class Canvas
 	 * @param id Texture ID.
 	 * @returns Size of texture.
 	 */
-	public getTextureSize(id: string): [number, number]
+	public getTextureSize(id: string): Vector2<number>
 	{
-		return this._context.textures.get(id)?.size;
+		if (!this._deleted) {
+			let size = this.getTexture(id, "getTextureSize")?.size;
+			if (size != null) {
+				return size;
+			}
+		} else {
+			this.deletedMessage("getTextureSize");
+		}
+		return [0, 0];
 	}
 
 	/**
@@ -393,7 +789,15 @@ export class Canvas
 	 */
 	public getTextureMinFilter(id: string): TextureFilter
 	{
-		return this._context.textures.get(id)?.minFilter;
+		if (!this._deleted) {
+			let filter = this.getTexture(id, "getTextureMinFilter")?.minFilter;
+			if (filter != null) {
+				return filter;
+			}
+		} else {
+			this.deletedMessage("getTextureMinFilter");
+		}
+		return TextureFilter.Linear;
 	}
 
 	/**
@@ -404,9 +808,13 @@ export class Canvas
 	 */
 	public setTextureMinFilter(id: string, filter: TextureFilter)
 	{
-		let texture = this._context.textures.get(id);
-		if (texture != null) {
-			texture.minFilter = filter;
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "setTextureMinFilter");
+			if (texture != null) {
+				texture.minFilter = filter;
+			}
+		} else {
+			this.deletedMessage("setTextureMinFilter");
 		}
 	}
 
@@ -418,7 +826,15 @@ export class Canvas
 	 */
 	public getTextureMagFilter(id: string): TextureFilter
 	{
-		return this._context.textures.get(id)?.magFilter;
+		if (!this._deleted) {	
+			let filter = this.getTexture(id, "getTextureMagFilter")?.magFilter;
+			if (filter != null) {
+				return filter;
+			}
+		} else {
+			this.deletedMessage("getTextureMagFilter");
+		}
+		return TextureFilter.Linear;
 	}
 
 	/**
@@ -429,9 +845,13 @@ export class Canvas
 	 */
 	public setTextureMagFilter(id: string, filter: TextureFilter)
 	{
-		let texture = this._context.textures.get(id);
-		if (texture != null) {
-			texture.magFilter = filter;
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "setTextureMagFilter");
+			if (texture != null) {
+				texture.magFilter = filter;
+			}
+		} else {
+			this.deletedMessage("setTextureMagFilter");
 		}
 	}
 
@@ -443,7 +863,15 @@ export class Canvas
 	 */
 	public getTextureWrapS(id: string): TextureWrap
 	{
-		return this._context.textures.get(id)?.wrapS;
+		if (!this._deleted) {	
+			let mode = this.getTexture(id, "getTextureWrapS")?.wrapS;
+			if (mode != null) {
+				return mode;
+			}
+		} else {
+			this.deletedMessage("getTextureWrapS");
+		}
+		return TextureWrap.Repeat;
 	}
 
 	/**
@@ -454,9 +882,13 @@ export class Canvas
 	 */
 	public setTextureWrapS(id: string, mode: TextureWrap)
 	{
-		let texture = this._context.textures.get(id);
-		if (texture != null) {
-			texture.wrapS = mode;
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "setTextureWrapS");
+			if (texture != null) {
+				texture.wrapS = mode;
+			}
+		} else {
+			this.deletedMessage("setTextureWrapS");
 		}
 	}
 
@@ -468,7 +900,15 @@ export class Canvas
 	 */
 	public getTextureWrapT(id: string): TextureWrap
 	{
-		return this._context.textures.get(id)?.wrapT;
+		if (!this._deleted) {	
+			let mode = this.getTexture(id, "getTextureWrapT")?.wrapT;
+			if (mode != null) {
+				return mode;
+			}
+		} else {
+			this.deletedMessage("getTextureWrapT");
+		}
+		return TextureWrap.Repeat;
 	}
 
 	/**
@@ -479,21 +919,36 @@ export class Canvas
 	 */
 	public setTextureWrapT(id: string, mode: TextureWrap)
 	{
-		let texture = this._context.textures.get(id);
-		if (texture != null) {
-			texture.wrapT = mode;
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "setTextureWrapT");
+			if (texture != null) {
+				texture.wrapT = mode;
+			}
+		} else {
+			this.deletedMessage("setTextureWrapT");
 		}
 	}
 
 	/**
-	 * Generate blank texture
+	 * Generate blank texture.
 	 * 
 	 * @param id Texture ID.
 	 * @param size Size of blank texture.
 	 */
-	public genBlankTexture(id: string, size: [number, number])
+	public genBlankTexture(id: string, size: Vector2<number>)
 	{
-		this._context.textures.get(id)?.generateBlank(size);	
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "genBlankTexture");
+			if (texture != null) {
+				if (texture instanceof RenderTexture) {
+					Log.error(`genBlankTexture: Cannot generate blank texture in render texture "${id}".`);
+				} else {
+					texture.generateBlank(size);
+				}
+			}
+		} else {
+			this.deletedMessage("genBlankTexture");
+		}
 	}
 
 	/**
@@ -504,7 +959,18 @@ export class Canvas
 	 */
 	public loadTextureImageFile(id: string, path: string)
 	{
-		this._context.textures.get(id)?.loadImageFile(path);
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "loadTextureImageFile");
+			if (texture != null) {
+				if (texture instanceof RenderTexture) {
+					Log.error(`loadTextureImageFile: Cannot load image file into render texture "${id}".`);
+				} else {
+					texture.loadImageFile(path);
+				}
+			}
+		} else {
+			this.deletedMessage("loadTextureImageFile");
+		}
 	}
 
 	/**
@@ -515,7 +981,18 @@ export class Canvas
 	 */
 	public loadTextureImage(id: string, image: HTMLImageElement)
 	{
-		this._context.textures.get(id)?.loadImage(image);
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "loadTextureImage");
+			if (texture != null) {
+				if (texture instanceof RenderTexture) {
+					Log.error(`loadTextureImage: Cannot load image into render texture "${id}".`);
+				} else {
+					texture.loadImage(image);
+				}
+			}
+		} else {
+			this.deletedMessage("loadTextureImage");
+		}
 	}
 
 	/**
@@ -526,7 +1003,18 @@ export class Canvas
 	 */
 	public loadTextureVideoFrame(id: string, video: HTMLVideoElement)
 	{
-		this._context.textures.get(id)?.loadVideoFrame(video);
+		if (!this._deleted) {
+			let texture = this.getTexture(id, "loadTextureVideoFrame");
+			if (texture != null) {
+				if (texture instanceof RenderTexture) {
+					Log.error(`loadTextureVideoFrame: Cannot load video frame into render texture "${id}".`);
+				} else {
+					texture.loadVideoFrame(video);
+				}
+			}
+		} else {
+			this.deletedMessage("loadTextureVideoFrame");
+		}
 	}
 
 	/**
@@ -536,7 +1024,11 @@ export class Canvas
 	 */
 	public genTextureMipmaps(id: string)
 	{
-		this._context.textures.get(id)?.generateMipmaps();
+		if (!this._deleted) {
+			this.getTexture(id, "genTextureMipmaps")?.generateMipmaps();
+		} else {
+			this.deletedMessage("genTextureMipmaps");
+		}
 	}
 
 	/**
@@ -544,7 +1036,11 @@ export class Canvas
 	 */
 	public deleteTexture(id: string)
 	{
-		this._context.textures.get(id)?.delete();
+		if (!this._deleted) {
+			this.getTexture(id, "deleteTexture")?.delete();
+		} else {
+			this.deletedMessage("deleteTexture");
+		}
 	}
 
 	/**
@@ -552,7 +1048,11 @@ export class Canvas
 	 */
 	public deleteAllTextures()
 	{
-		this._context.deleteTextures();
+		if (!this._deleted) {
+			this._context.deleteTextures();
+		} else {
+			this.deletedMessage("deleteAllTextures");
+		}
 	}
 
 	/******************/
@@ -565,9 +1065,13 @@ export class Canvas
 	 * @param id Render texture ID.
 	 * @param size Render texture size.
 	 */
-	public createRenderTexture(id: string, size: [number, number])
+	public createRenderTexture(id: string, size: Vector2<number>)
 	{
-		new RenderTexture(id, this._context, size);
+		if (!this._deleted) {
+			new RenderTexture(id, this._context, size);
+		} else {
+			this.deletedMessage("createRenderTexture");
+		}
 	}
 
 	/**
@@ -577,7 +1081,30 @@ export class Canvas
 	 */
 	public bindRenderTexture(id: string)
 	{
-		this._context.textures.get(id)?.bindFBO();
+		if (!this._deleted) {
+			let renderTexture = this.getTexture(id, "bindRenderTexture");
+			if (renderTexture != null) {
+				if (renderTexture instanceof RenderTexture) {
+					renderTexture.bindFBO();
+				} else {
+					Log.error(`bindRenderTexture: "${id}" is not a render texture.`);
+				}
+			}
+		} else {
+			this.deletedMessage("bindRenderTexture");
+		}
+	}
+
+	/**
+	 * Unbind render texture
+	 */
+	public unbindRenderTexture()
+	{
+		if (!this._deleted) {
+			this.bindRenderTexture("fbo_devon_webgl");
+		} else {
+			this.deletedMessage("unbindRenderTexture");
+		}
 	}
 
 	/**
@@ -586,9 +1113,20 @@ export class Canvas
 	 * @param id Render texture ID.
 	 * @param size New render texture size.
 	 */
-	public resizeRenderTexture(id: string, size: [number, number])
+	public resizeRenderTexture(id: string, size: Vector2<number>)
 	{
-		this._context.textures.get(id)?.resize(size);
+		if (!this._deleted) {
+			let renderTexture = this.getTexture(id, "resizeRenderTexture");
+			if (renderTexture != null) {
+				if (renderTexture instanceof RenderTexture) {
+					renderTexture.resize(size);
+				} else {
+					Log.error(`resizeRenderTexture: "${id}" is not a render texture.`);
+				}
+			}
+		} else {
+			this.deletedMessage("resizeRenderTexture");
+		}
 	}
 
 	/**********/
@@ -600,11 +1138,31 @@ export class Canvas
 	 * 
 	 * @param id Shader ID.
 	 * @param vertexCode: The vertex shader code.
-	 * @param fragCode: The gragment shader code.
+	 * @param fragCode: The fragment shader code.
 	 */
 	public createShader(id: string, vertexCode: string, fragCode: string)
 	{
-		new Shader(id, this._context, vertexCode, fragCode);
+		if (!this._deleted) {
+			new Shader(id, this._context, vertexCode, fragCode);
+		} else {
+			this.deletedMessage("createShader");
+		}
+	}
+
+	/**
+	 * Get shader
+	 * 
+	 * @param id Shader ID.
+	 * @param funcName The name of the function that called this.
+	 * @returns The shader.
+	 */
+	private getShader(id: string, funcName: string): Shader
+	{
+		let shader = this._context.shaders.get(id);
+		if (shader == null) {
+			Log.error(`${funcName}: Cannot find "${id}".`);
+		}
+		return shader;
 	}
 
 	/**
@@ -616,7 +1174,12 @@ export class Canvas
 	 */
 	public setShaderFloat(id: string, name: string, val: number)
 	{
-		this._context.shaders.get(id)?.setFloat(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderFloat");
+			shader?.setFloat(name, val);
+		} else {
+			this.deletedMessage("setShaderFloat");
+		}
 	}
 
 	/**
@@ -628,7 +1191,12 @@ export class Canvas
 	 */
 	public setShaderInt(id: string, name: string, val: number)
 	{
-		this._context.shaders.get(id)?.setInt(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderInt");
+			shader?.setInt(name, val);
+		} else {
+			this.deletedMessage("setShaderInt");
+		}
 	}
 	
 	/**
@@ -638,9 +1206,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderVec2(id: string, name: string, val: [number, number])
+	public setShaderVec2(id: string, name: string, val: Vector2<number>)
 	{
-		this._context.shaders.get(id)?.setVec2(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderVec2");
+			shader?.setVec2(name, val);
+		} else {
+			this.deletedMessage("setShaderVec2");
+		}
 	}
 
 	/**
@@ -650,9 +1223,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderIVec2(id: string, name: string, val: [number, number])
+	public setShaderIVec2(id: string, name: string, val: Vector2<number>)
 	{
-		this._context.shaders.get(id)?.setIVec2(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderIVec2");
+			shader?.setIVec2(name, val);
+		} else {
+			this.deletedMessage("setShaderIVec2");
+		}
 	}
 	
 	/**
@@ -662,9 +1240,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderVec3(id: string, name: string, val: [number, number, number])
+	public setShaderVec3(id: string, name: string, val: Vector3<number>)
 	{
-		this._context.shaders.get(id)?.setVec3(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderVec3");
+			shader?.setVec3(name, val);
+		} else {
+			this.deletedMessage("setShaderVec3");
+		}
 	}
 	
 	/**
@@ -674,9 +1257,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderIVec3(id: string, name: string, val: [number, number, number])
+	public setShaderIVec3(id: string, name: string, val: Vector3<number>)
 	{
-		this._context.shaders.get(id)?.setIVec3(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderIVec3");
+			shader?.setIVec3(name, val);
+		} else {
+			this.deletedMessage("setShaderIVec3");
+		}
 	}
 	
 	/**
@@ -686,9 +1274,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderVec4(id: string, name: string, val: [number, number, number, number])
+	public setShaderVec4(id: string, name: string, val: Vector4<number>)
 	{
-		this._context.shaders.get(id)?.setVec4(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderVec4");
+			shader?.setVec4(name, val);
+		} else {
+			this.deletedMessage("setShaderVec4");
+		}
 	}
 	
 	/**
@@ -698,9 +1291,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderIVec4(id: string, name: string, val: [number, number, number, number])
+	public setShaderIVec4(id: string, name: string, val: Vector4<number>)
 	{
-		this._context.shaders.get(id)?.setIVec4(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderIVec4");
+			shader?.setIVec4(name, val);
+		} else {
+			this.deletedMessage("setShaderIVec4");
+		}
 	}
 	
 	/**
@@ -710,9 +1308,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderMatrix2(id: string, name: string, val: [number, number, number, number])
+	public setShaderMatrix2(id: string, name: string, val: Matrix2<number>)
 	{
-		this._context.shaders.get(id)?.setMatrix2(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderMatrix2");
+			shader?.setMatrix2(name, val);
+		} else {
+			this.deletedMessage("setShaderMatrix2");
+		}
 	}
 	
 	/**
@@ -722,10 +1325,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderMatrix3(id: string, name: string, val:
-		[number, number, number, number, number, number, number, number, number])
+	public setShaderMatrix3(id: string, name: string, val: Matrix3<number>)
 	{
-		this._context.shaders.get(id)?.setMatrix3(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderMatrix3");
+			shader?.setMatrix3(name, val);
+		} else {
+			this.deletedMessage("setShaderMatrix3");
+		}
 	}
 	
 	/**
@@ -735,11 +1342,14 @@ export class Canvas
 	 * @param name Name of attribute.
 	 * @param val Values to set.
 	 */
-	public setShaderMatrix4(id: string, name: string, val:
-		[number, number, number, number, number, number, number, number,
-		 number, number, number, number, number, number, number, number])
+	public setShaderMatrix4(id: string, name: string, val: Matrix4<number>)
 	{
-		this._context.shaders.get(id)?.setMatrix4(name, val);
+		if (!this._deleted) {
+			let shader = this.getShader(id, "setShaderMatrix4");
+			shader?.setMatrix4(name, val);
+		} else {
+			this.deletedMessage("setShaderMatrix4");
+		}
 	}
 
 	/**
@@ -752,9 +1362,13 @@ export class Canvas
 	 */
 	public setShaderTexture(id: string, name: string, textureID: string, num: number)
 	{
-		let texture = this._context.textures.get(id);
-		if (texture != null) {
-			this._context.shaders.get(id)?.setTexture(name, texture, num);
+		if (!this._deleted) {
+			let texture = this.getTexture(textureID, "setShaderTexture");
+			if (texture != null) {
+				this.getShader(id, "setShaderTexture")?.setTexture(name, texture, num);
+			}
+		} else {
+			this.deletedMessage("setShaderTexture");
 		}
 	}
 
@@ -763,7 +1377,11 @@ export class Canvas
 	 */
 	public deleteShader(id: string)
 	{
-		this._context.shaders.get(id)?.delete();
+		if (!this._deleted) {
+			this.getShader(id, "deleteShader")?.delete();
+		} else {
+			this.deletedMessage("deleteShader");
+		}
 	}
 
 	/**
@@ -771,7 +1389,11 @@ export class Canvas
 	 */
 	public deleteAllShaders()
 	{
-		this._context.deleteShaders();
+		if (!this._deleted) {
+			this._context.deleteShaders();
+		} else {
+			this.deletedMessage("deleteAllShaders");
+		}
 	}
 
 	/********/
@@ -788,13 +1410,19 @@ export class Canvas
 	 */
 	public createStaticMesh<T extends Vertex>(id: string, vertices: Array<T>, elements?: number[])
 	{
-		let mesh = new Mesh<T>(id, this._context, false);
-		mesh.setVertexArray(vertices, 0, true);
-		if (elements != null) {
-			mesh.setElementArray(elements, 0, true);
+		if (!this._deleted) {
+			let mesh = new Mesh<T>(id, this._context, false);
+
+			mesh.setVertices(vertices, 0);
+			if (elements != null) {
+				mesh.setElements(elements, 0);
+			}
+
+			mesh.createVBO();
+			mesh.createEBO();
+		} else {
+			this.deletedMessage("createStaticMesh");
 		}
-		mesh.createVBO();
-		mesh.createEBO();
 	}
 
 	/**
@@ -805,7 +1433,27 @@ export class Canvas
 	 */
 	public createDynamicMesh<T extends Vertex>(id: string)
 	{
-		let mesh = new Mesh<T>(id, this._context, true);
+		if (!this._deleted) {
+			new Mesh<T>(id, this._context, true);
+		} else {
+			this.deletedMessage("createDynamicMesh");
+		}
+	}
+
+	/**
+	 * Get mesh
+	 * 
+	 * @param id Mesh ID.
+	 * @param funcName The name of the function that called this.
+	 * @returns The mesh.
+	 */
+	private getMesh(id: string, funcName: string): Mesh<Vertex>
+	{
+		let mesh = this._context.meshes.get(id);
+		if (mesh == null) {
+			Log.error(`${funcName}: Cannot find "${id}".`);
+		}
+		return mesh;
 	}
 
 	/**
@@ -817,7 +1465,15 @@ export class Canvas
 	 */
 	public getMeshVertices<T extends Vertex>(id: string): Array<T>
 	{
-		return this._context.meshes.get(id)?.vertices as Array<T>;
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "getMeshVertices");
+			if (mesh != null) {
+				return mesh.vertices as Array<T>;
+			}
+		} else {
+			this.deletedMessage("getMeshVertices");
+		}
+		return new Array<T>(0);
 	}
 
 	/**
@@ -828,31 +1484,61 @@ export class Canvas
 	 */
 	public getMeshElements(id: string): number[]
 	{
-		return this._context.meshes.get(id)?.elements;
+		if (!this._deleted) {	
+			let mesh = this.getMesh(id, "getMeshElements");
+			if (mesh != null) {
+				return mesh.elements;
+			}
+		} else {
+			this.deletedMessage("getMeshElements");
+		}
+		return new Array<number>(0);
 	}
 
 	/**
-	 * Set array of mesh vertices (for dynamic meshes).
+	 * Set mesh vertex data (for dynamic meshes).
 	 * 
 	 * @param id: Mesh ID.
 	 * @param vertices Vertex data.
 	 * @param offset Desination data offset.
 	 */
-	public setVertexArray(id: string, vertices: Vertex[], offset: number)
+	public setMeshVertices(id: string, vertices: Vertex[], offset: number)
 	{
-		this._context.meshes.get(id)?.setVertexArray(vertices, offset, false);
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "setMeshVertices");
+			if (mesh != null) {
+				if (mesh.dynamic) {
+					mesh.setVertices(vertices, offset);
+				} else {
+					Log.error(`setMeshVertices: "${id}" is not a dynamic mesh.`);
+				}
+			}
+		} else {
+			this.deletedMessage("setMeshVertices");
+		}
 	}
 
 	/**
-	 * Set array of mesh elements (for dynamic meshes).
+	 * Set mesh element data (for dynamic meshes).
 	 * 
 	 * @param id: Mesh ID.
 	 * @param elements Element data.
 	 * @param offset Desination data offset.
 	 */
-	public setElementArray(id: string, elements: number[], offset: number)
+	public setMeshElements(id: string, elements: number[], offset: number)
 	{
-		this._context.meshes.get(id)?.setElementArray(elements, offset, false);
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "setMeshElements");
+			if (mesh != null) {
+				if (mesh.dynamic) {
+					mesh.setElements(elements, offset);
+				} else {
+					Log.error(`setMeshElements: "${id}" is not a dynamic mesh.`);
+				}
+			}
+		} else {
+			this.deletedMessage("setMeshElements");
+		}
 	}
 
 	/**
@@ -861,9 +1547,20 @@ export class Canvas
 	 * @param id: Mesh ID.
 	 * @param count Number of vertices to reset to.
 	 */
-	public clearVertices(id: string, count?: number)
+	public resetMeshVertices(id: string, count?: number)
 	{
-		this._context.meshes.get(id)?.resetVertices(count);
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "resetMeshVertices");
+			if (mesh != null) {
+				if (mesh.dynamic) {
+					mesh.resetVertices(count);
+				} else {
+					Log.error(`resetMeshVertices: "${id}" is not a dynamic mesh.`);
+				}
+			}
+		} else {
+			this.deletedMessage("resetMeshVertices");
+		}
 	}
 
 	/**
@@ -872,42 +1569,83 @@ export class Canvas
 	 * @param id: Mesh ID.
 	 * @param count Number of elements to reset to.
 	 */
-	public clearElements(id: string, count?: number)
+	public resetMeshElements(id: string, count?: number)
 	{
-		this._context.meshes.get(id)?.resetElements(count);
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "resetMeshElements");
+			if (mesh != null) {
+				if (mesh.dynamic) {
+					mesh.resetElements(count);
+				} else {
+					Log.error(`resetMeshElements: "${id}" is not a dynamic mesh.`);
+				}
+			}
+		} else {
+			this.deletedMessage("resetMeshElements");
+		}
 	}
 
 	/**
-	 * Flush mesh vertex data.
+	 * Flush mesh vertex data (for dynamic meshes).
 	 * 
 	 * @param id: Mesh ID.
 	 */
-	public flushVertices(id: string)
+	public flushMeshVertices(id: string)
 	{
-		this._context.meshes.get(id)?.flushVertices();
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "flushMeshVertices");
+			if (mesh != null) {
+				if (mesh.dynamic) {
+					mesh.flushVertices();
+				} else {
+					Log.error(`flushMeshVertices: "${id}" is not a dynamic mesh.`);
+				}
+			}
+		} else {
+			this.deletedMessage("flushMeshVertices");
+		}
 	}
 
 	/**
-	 * Flush mesh element data.
+	 * Flush mesh element data (for dynamic meshes).
 	 * 
 	 * @param id: Mesh ID.
 	 */
-	public flushElements(id: string)
+	public flushMeshElements(id: string)
 	{
-		this._context.meshes.get(id)?.flushElements();
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "flushMeshElements");
+			if (mesh != null) {
+				if (mesh.dynamic) {
+					mesh.flushElements();
+				} else {
+					Log.error(`flushMeshElements: "${id}" is not a dynamic mesh.`);
+				}
+			}
+		} else {
+			this.deletedMessage("flushMeshElements");
+		}
 	}
 
 	/**
-	 * Flush mesh data.
+	 * Flush mesh data (for dynamic meshes).
 	 * 
 	 * @param id: Mesh ID.
 	 */
 	public flushMeshData(id: string)
 	{
-		let mesh = this._context.meshes.get(id);
-		if (mesh != null) {
-			mesh.flushVertices();
-			mesh.flushElements();
+		if (!this._deleted) {
+			let mesh = this.getMesh(id, "flushMeshData");
+			if (mesh != null) {
+				if (mesh.dynamic) {
+					mesh.flushVertices();
+					mesh.flushElements();
+				} else {
+					Log.error(`flushMeshElements: "${id}" is not a dynamic mesh.`);
+				}
+			}
+		} else {
+			this.deletedMessage("flushMeshData");
 		}
 	}
 
@@ -919,9 +1657,13 @@ export class Canvas
 	 */
 	public drawMesh(id: string, shaderID: string)
 	{
-		let shader = this._context.shaders.get(shaderID);
-		if (shader != null) {
-			this._context.meshes.get(id)?.draw(shader);
+		if (!this._deleted) {
+			let shader = this.getShader(shaderID, "drawMesh");
+			if (shader != null) {
+				this.getMesh(id, "drawMesh")?.draw(shader);
+			}
+		} else {
+			this.deletedMessage("drawMesh");
 		}
 	}
 
@@ -935,9 +1677,13 @@ export class Canvas
 	 */
 	public drawMeshPartial(id: string, shaderID: string, offset: number, length: number)
 	{
-		let shader = this._context.shaders.get(shaderID);
-		if (shader != null) {
-			this._context.meshes.get(id)?.drawPartial(shader, offset, length);
+		if (!this._deleted) {
+			let shader = this.getShader(shaderID, "drawMeshPartial");
+			if (shader != null) {
+				this.getMesh(id, "drawMeshPartial")?.drawPartial(shader, offset, length);
+			}
+		} else {
+			this.deletedMessage("drawMeshPartial");
 		}
 	}
 	
@@ -946,7 +1692,11 @@ export class Canvas
 	 */
 	public deleteMesh(id: string)
 	{
-		this._context.meshes.delete(id);
+		if (!this._deleted) {
+			this.getMesh(id, "deleteMesh")?.delete();
+		} else {
+			this.deletedMessage("deleteMesh");
+		}
 	}
 	
 	/**
@@ -954,6 +1704,10 @@ export class Canvas
 	 */
 	public deleteAllMeshes()
 	{
-		this._context.deleteMeshes();
+		if (!this._deleted) {
+			this._context.deleteMeshes();
+		} else {
+			this.deletedMessage("deleteAllMeshes");
+		}
 	}
 }

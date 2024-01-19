@@ -1,5 +1,4 @@
 import { Mesh } from "./mesh";
-import { RenderTexture } from "./render-texture";
 import { Shader } from "./shader";
 import { Texture } from "./texture";
 import { Vertex } from "../public/vertex";
